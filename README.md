@@ -37,6 +37,18 @@ fixtures; generated plans have their own stable sample IDs.
 
 ## Use OpenCode agents
 
+With Python 3.11+, Git, and an authenticated OpenCode installation, run the live
+acceptance demo from PowerShell in this checkout:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\run-live-demo.ps1
+```
+
+This uses your existing OpenCode model selection. No password is required unless
+`OPENCODE_SERVER_PASSWORD` is already set. The demo starts and stops its own localhost
+server and exercises all three agents with synthetic data through `review_ready`.
+
+
 Configure an OpenCode provider/model you can access, start `opencode serve` from this
 repository, and use `--mode opencode` on `context`, `propose`, and `review`.
 `OPENCODE_MODEL` must name an explicit `provider/model`; there is no model or offline

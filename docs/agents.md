@@ -7,21 +7,39 @@ sessions. The mode is explicit per action, and a live failure never switches mod
 
 ## Windows / PowerShell setup
 
+For a single-command live acceptance run with OpenCode already installed and authenticated:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\run-live-demo.ps1
+```
+
+The launcher installs the Python package in `.venv`, starts its own localhost server,
+and uses the configured OpenCode model or the last-used available model. It never
+chooses a new provider or changes saved model settings. If no existing selection is
+found, it asks you to select one in OpenCode. It waits up to three minutes for project
+configuration to load after server health becomes available. The live test uses a
+temporary database, simulates manufacturing approval/collection, and stops at
+`review_ready`; the server log remains in `opencode-demo.log`.
+
+Authentication is optional: unset or empty `OPENCODE_SERVER_PASSWORD` means no
+password and no Authorization header. A nonempty existing password is preserved,
+along with `OPENCODE_SERVER_USERNAME` (default `opencode`). No password is generated.
+For manual startup, set the same password in both terminals only if you want one.
+
+### Manual startup
+
 Install Python 3.11+, OpenCode, and configure a provider through `opencode auth login`.
 Use a model listed by `opencode models` that your provider account actually permits.
 No model is hardcoded in this repository. From the repository root:
 
 ```powershell
 python -m pip install -e .
-$env:OPENCODE_SERVER_PASSWORD = "your-local-server-password"
 opencode serve --hostname 127.0.0.1 --port 4096
 ```
 
-In another PowerShell terminal in the same repository, set the same server password
-and your selected model:
+In another PowerShell terminal in the same repository, set your selected model:
 
 ```powershell
-$env:OPENCODE_SERVER_PASSWORD = "your-local-server-password"
 $env:OPENCODE_BASE_URL = "http://127.0.0.1:4096"
 $env:OPENCODE_MODEL = "provider/model-from-your-configured-account"
 python -m cleanroom_os.workflow context --db agent-demo.sqlite --mode opencode
