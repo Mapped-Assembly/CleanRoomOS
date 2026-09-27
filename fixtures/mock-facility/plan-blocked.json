@@ -1,0 +1,290 @@
+{
+  "synthetic": true,
+  "data": {
+    "plan_id": "SYN-PLAN-001",
+    "revision": 1,
+    "requirements": [
+      {
+        "requirement_id": "REQ-A",
+        "room_id": "A",
+        "sample_type": "air",
+        "count": 2,
+        "threshold": {
+          "value": 10,
+          "unit": "CFU/m3",
+          "operator": "le",
+          "sources": [
+            {
+              "kind": "sop",
+              "source_id": "SYN-SAMPLING-001",
+              "version": "1",
+              "locator": "/data/requirements/0"
+            }
+          ]
+        },
+        "sources": [
+          {
+            "kind": "sop",
+            "source_id": "SYN-SAMPLING-001",
+            "version": "1",
+            "locator": "/data/requirements/0"
+          },
+          {
+            "kind": "recipe",
+            "source_id": "SYN-RECIPE-001",
+            "version": "1",
+            "locator": "/data/requirements/0"
+          }
+        ]
+      },
+      {
+        "requirement_id": "REQ-B",
+        "room_id": "B",
+        "sample_type": "air",
+        "count": 2,
+        "threshold": {
+          "value": 10,
+          "unit": "CFU/m3",
+          "operator": "le",
+          "sources": [
+            {
+              "kind": "sop",
+              "source_id": "SYN-SAMPLING-001",
+              "version": "1",
+              "locator": "/data/requirements/1"
+            }
+          ]
+        },
+        "sources": [
+          {
+            "kind": "sop",
+            "source_id": "SYN-SAMPLING-001",
+            "version": "1",
+            "locator": "/data/requirements/1"
+          },
+          {
+            "kind": "recipe",
+            "source_id": "SYN-RECIPE-001",
+            "version": "1",
+            "locator": "/data/requirements/1"
+          }
+        ]
+      },
+      {
+        "requirement_id": "REQ-C",
+        "room_id": "C",
+        "sample_type": "air",
+        "count": 2,
+        "threshold": {
+          "value": 10,
+          "unit": "CFU/m3",
+          "operator": "le",
+          "sources": [
+            {
+              "kind": "sop",
+              "source_id": "SYN-SAMPLING-001",
+              "version": "1",
+              "locator": "/data/requirements/2"
+            }
+          ]
+        },
+        "sources": [
+          {
+            "kind": "sop",
+            "source_id": "SYN-SAMPLING-001",
+            "version": "1",
+            "locator": "/data/requirements/2"
+          },
+          {
+            "kind": "recipe",
+            "source_id": "SYN-RECIPE-001",
+            "version": "1",
+            "locator": "/data/requirements/2"
+          }
+        ]
+      }
+    ],
+    "samples": [
+      {
+        "sample_id": "SAMPLE-A-1",
+        "requirement_id": "REQ-A",
+        "room_id": "A",
+        "sample_type": "air",
+        "window": {
+          "start": "2026-09-27T09:05:00-04:00",
+          "end": "2026-09-27T09:10:00-04:00",
+          "timezone": "America/New_York"
+        },
+        "sequencing_reason": "Synthetic expected plan: room access starts at 09:00; five-minute setup then sequential samples.",
+        "sources": [
+          {
+            "kind": "sop",
+            "source_id": "SYN-SAMPLING-001",
+            "version": "1",
+            "locator": "/data/requirements/0"
+          },
+          {
+            "kind": "recipe",
+            "source_id": "SYN-RECIPE-001",
+            "version": "1",
+            "locator": "/data/requirements/0"
+          },
+          {
+            "kind": "schedule",
+            "source_id": "SYN-SCHEDULE-001",
+            "version": "1",
+            "locator": "/data/availability/0"
+          },
+          {
+            "kind": "recipe",
+            "source_id": "SYN-EXECUTION-001",
+            "version": "1",
+            "locator": "/data/execution"
+          }
+        ]
+      },
+      {
+        "sample_id": "SAMPLE-A-2",
+        "requirement_id": "REQ-A",
+        "room_id": "A",
+        "sample_type": "air",
+        "window": {
+          "start": "2026-09-27T09:10:00-04:00",
+          "end": "2026-09-27T09:15:00-04:00",
+          "timezone": "America/New_York"
+        },
+        "sequencing_reason": "Synthetic expected plan: room access starts at 09:00; five-minute setup then sequential samples.",
+        "sources": [
+          {
+            "kind": "sop",
+            "source_id": "SYN-SAMPLING-001",
+            "version": "1",
+            "locator": "/data/requirements/0"
+          },
+          {
+            "kind": "recipe",
+            "source_id": "SYN-RECIPE-001",
+            "version": "1",
+            "locator": "/data/requirements/0"
+          },
+          {
+            "kind": "schedule",
+            "source_id": "SYN-SCHEDULE-001",
+            "version": "1",
+            "locator": "/data/availability/0"
+          },
+          {
+            "kind": "recipe",
+            "source_id": "SYN-EXECUTION-001",
+            "version": "1",
+            "locator": "/data/execution"
+          }
+        ]
+      },
+      {
+        "sample_id": "SAMPLE-C-1",
+        "requirement_id": "REQ-C",
+        "room_id": "C",
+        "sample_type": "air",
+        "window": {
+          "start": "2026-09-27T10:05:00-04:00",
+          "end": "2026-09-27T10:10:00-04:00",
+          "timezone": "America/New_York"
+        },
+        "sequencing_reason": "Synthetic expected plan: room access starts at 10:00; five-minute setup then sequential samples.",
+        "sources": [
+          {
+            "kind": "sop",
+            "source_id": "SYN-SAMPLING-001",
+            "version": "1",
+            "locator": "/data/requirements/2"
+          },
+          {
+            "kind": "recipe",
+            "source_id": "SYN-RECIPE-001",
+            "version": "1",
+            "locator": "/data/requirements/2"
+          },
+          {
+            "kind": "schedule",
+            "source_id": "SYN-SCHEDULE-001",
+            "version": "1",
+            "locator": "/data/availability/2"
+          },
+          {
+            "kind": "recipe",
+            "source_id": "SYN-EXECUTION-001",
+            "version": "1",
+            "locator": "/data/execution"
+          }
+        ]
+      },
+      {
+        "sample_id": "SAMPLE-C-2",
+        "requirement_id": "REQ-C",
+        "room_id": "C",
+        "sample_type": "air",
+        "window": {
+          "start": "2026-09-27T10:10:00-04:00",
+          "end": "2026-09-27T10:15:00-04:00",
+          "timezone": "America/New_York"
+        },
+        "sequencing_reason": "Synthetic expected plan: room access starts at 10:00; five-minute setup then sequential samples.",
+        "sources": [
+          {
+            "kind": "sop",
+            "source_id": "SYN-SAMPLING-001",
+            "version": "1",
+            "locator": "/data/requirements/2"
+          },
+          {
+            "kind": "recipe",
+            "source_id": "SYN-RECIPE-001",
+            "version": "1",
+            "locator": "/data/requirements/2"
+          },
+          {
+            "kind": "schedule",
+            "source_id": "SYN-SCHEDULE-001",
+            "version": "1",
+            "locator": "/data/availability/2"
+          },
+          {
+            "kind": "recipe",
+            "source_id": "SYN-EXECUTION-001",
+            "version": "1",
+            "locator": "/data/execution"
+          }
+        ]
+      }
+    ],
+    "conflicts": [
+      {
+        "conflict_id": "CONFLICT-B",
+        "requirement_id": "REQ-B",
+        "room_id": "B",
+        "reason": "Room B occupied throughout the 09:00\u201317:00 shift; no known access window. Human resolution required; retain both required air samples.",
+        "sources": [
+          {
+            "kind": "sop",
+            "source_id": "SYN-SAMPLING-001",
+            "version": "1",
+            "locator": "/data/requirements/1"
+          },
+          {
+            "kind": "recipe",
+            "source_id": "SYN-RECIPE-001",
+            "version": "1",
+            "locator": "/data/requirements/1"
+          },
+          {
+            "kind": "schedule",
+            "source_id": "SYN-SCHEDULE-001",
+            "version": "1",
+            "locator": "/data/occupancy/1"
+          }
+        ]
+      }
+    ]
+  }
+}

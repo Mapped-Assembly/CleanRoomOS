@@ -1,0 +1,138 @@
+{
+  "synthetic": true,
+  "data": [
+    {
+      "result_id": "RES-1",
+      "plan_id": "SYN-PLAN-001",
+      "plan_revision": 2,
+      "sample_id": "SAMPLE-A-1",
+      "room_id": "A",
+      "sample_type": "air",
+      "collected_at": "2026-09-27T09:10:00-04:00",
+      "value": 3,
+      "unit": "CFU/m3",
+      "sources": [
+        {
+          "kind": "lims",
+          "source_id": "SYN-LIMS-ANOMALIES",
+          "version": "1",
+          "locator": "/data/0"
+        }
+      ]
+    },
+    {
+      "result_id": "RES-2",
+      "plan_id": "SYN-PLAN-001",
+      "plan_revision": 2,
+      "sample_id": "SAMPLE-A-2",
+      "room_id": "A",
+      "sample_type": "air",
+      "collected_at": "2026-09-27T09:15:00-04:00",
+      "value": 3,
+      "unit": "CFU/m3",
+      "sources": [
+        {
+          "kind": "lims",
+          "source_id": "SYN-LIMS-ANOMALIES",
+          "version": "1",
+          "locator": "/data/1"
+        }
+      ]
+    },
+    {
+      "result_id": "RES-3",
+      "plan_id": "SYN-PLAN-001",
+      "plan_revision": 2,
+      "sample_id": "SAMPLE-C-1",
+      "room_id": "C",
+      "sample_type": "air",
+      "collected_at": "2026-09-27T10:10:00-04:00",
+      "value": 25,
+      "unit": "CFU/m3",
+      "sources": [
+        {
+          "kind": "lims",
+          "source_id": "SYN-LIMS-ANOMALIES",
+          "version": "1",
+          "locator": "/data/2"
+        }
+      ]
+    },
+    {
+      "result_id": "RES-4",
+      "plan_id": "SYN-PLAN-001",
+      "plan_revision": 2,
+      "sample_id": "SAMPLE-C-2",
+      "room_id": "A",
+      "sample_type": "air",
+      "collected_at": "2026-09-27T10:15:00-04:00",
+      "value": 3,
+      "unit": "CFU/m3",
+      "sources": [
+        {
+          "kind": "lims",
+          "source_id": "SYN-LIMS-ANOMALIES",
+          "version": "1",
+          "locator": "/data/3"
+        }
+      ]
+    },
+    {
+      "result_id": "RES-5",
+      "plan_id": "SYN-PLAN-001",
+      "plan_revision": 2,
+      "sample_id": "SAMPLE-B-1",
+      "room_id": "B",
+      "sample_type": "air",
+      "collected_at": "2026-09-27T11:10:00-04:00",
+      "value": 3,
+      "unit": "CFU/m3",
+      "sources": [
+        {
+          "kind": "lims",
+          "source_id": "SYN-LIMS-ANOMALIES",
+          "version": "1",
+          "locator": "/data/4"
+        }
+      ]
+    },
+    {
+      "result_id": "RES-DUPLICATE",
+      "plan_id": "SYN-PLAN-001",
+      "plan_revision": 2,
+      "sample_id": "SAMPLE-A-1",
+      "room_id": "A",
+      "sample_type": "air",
+      "collected_at": "2026-09-27T09:10:00-04:00",
+      "value": 3,
+      "unit": "CFU/m3",
+      "sources": [
+        {
+          "kind": "lims",
+          "source_id": "SYN-LIMS-ANOMALIES",
+          "version": "1",
+          "locator": "/data/5"
+        }
+      ]
+    },
+    {
+      "result_id": "RES-UNMATCHED",
+      "plan_id": "SYN-PLAN-001",
+      "plan_revision": 2,
+      "sample_id": "SAMPLE-UNPLANNED",
+      "room_id": "A",
+      "sample_type": "air",
+      "collected_at": "2026-09-27T09:10:00-04:00",
+      "value": 3,
+      "unit": "CFU/m3",
+      "sources": [
+        {
+          "kind": "lims",
+          "source_id": "SYN-LIMS-ANOMALIES",
+          "version": "1",
+          "locator": "/data/6"
+        }
+      ]
+    }
+  ]
+}

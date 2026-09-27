@@ -1,0 +1,53 @@
+{
+  "synthetic": true,
+  "records": [
+    {
+      "kind": "sop",
+      "source_id": "SYN-SAMPLING-001",
+      "version": "1",
+      "file": "sop.json"
+    },
+    {
+      "kind": "recipe",
+      "source_id": "SYN-RECIPE-001",
+      "version": "1",
+      "file": "recipe.json"
+    },
+    {
+      "kind": "recipe",
+      "source_id": "SYN-EXECUTION-001",
+      "version": "1",
+      "file": "facility.json"
+    },
+    {
+      "kind": "schedule",
+      "source_id": "SYN-SCHEDULE-001",
+      "version": "1",
+      "file": "schedule.json"
+    },
+    {
+      "kind": "schedule",
+      "source_id": "SYN-SCHEDULE-001",
+      "version": "2",
+      "file": "schedule-resolved.json"
+    },
+    {
+      "kind": "human",
+      "source_id": "SYN-UPDATE-001",
+      "version": "1",
+      "file": "human-update.json"
+    },
+    {
+      "kind": "lims",
+      "source_id": "SYN-LIMS-NORMAL",
+      "version": "1",
+      "file": "lims-normal.json"
+    },
+    {
+      "kind": "lims",
+      "source_id": "SYN-LIMS-ANOMALIES",
+      "version": "1",
+      "file": "lims-anomalies.json"
+    }
+  ]
+}

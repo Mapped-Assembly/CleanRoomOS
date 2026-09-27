@@ -1,0 +1,121 @@
+{
+  "synthetic": true,
+  "data": {
+    "schedule_id": "SYN-SCHEDULE-001",
+    "version": "1",
+    "shift": {
+      "start": "2026-09-27T09:00:00-04:00",
+      "end": "2026-09-27T17:00:00-04:00",
+      "timezone": "America/New_York"
+    },
+    "availability": [
+      {
+        "room_id": "A",
+        "windows": [
+          {
+            "start": "2026-09-27T09:00:00-04:00",
+            "end": "2026-09-27T09:30:00-04:00",
+            "timezone": "America/New_York"
+          }
+        ],
+        "sources": [
+          {
+            "kind": "schedule",
+            "source_id": "SYN-SCHEDULE-001",
+            "version": "1",
+            "locator": "/data/availability/0"
+          }
+        ]
+      },
+      {
+        "room_id": "B",
+        "windows": [],
+        "sources": [
+          {
+            "kind": "schedule",
+            "source_id": "SYN-SCHEDULE-001",
+            "version": "1",
+            "locator": "/data/availability/1"
+          }
+        ]
+      },
+      {
+        "room_id": "C",
+        "windows": [
+          {
+            "start": "2026-09-27T10:00:00-04:00",
+            "end": "2026-09-27T17:00:00-04:00",
+            "timezone": "America/New_York"
+          }
+        ],
+        "sources": [
+          {
+            "kind": "schedule",
+            "source_id": "SYN-SCHEDULE-001",
+            "version": "1",
+            "locator": "/data/availability/2"
+          }
+        ]
+      }
+    ],
+    "occupancy": [
+      {
+        "room_id": "A",
+        "worker_ids": [
+          "WORKER-A"
+        ],
+        "window": {
+          "start": "2026-09-27T09:30:00-04:00",
+          "end": "2026-09-27T17:00:00-04:00",
+          "timezone": "America/New_York"
+        },
+        "sources": [
+          {
+            "kind": "schedule",
+            "source_id": "SYN-SCHEDULE-001",
+            "version": "1",
+            "locator": "/data/occupancy/0"
+          }
+        ]
+      },
+      {
+        "room_id": "B",
+        "worker_ids": [
+          "WORKER-B"
+        ],
+        "window": {
+          "start": "2026-09-27T09:00:00-04:00",
+          "end": "2026-09-27T17:00:00-04:00",
+          "timezone": "America/New_York"
+        },
+        "sources": [
+          {
+            "kind": "schedule",
+            "source_id": "SYN-SCHEDULE-001",
+            "version": "1",
+            "locator": "/data/occupancy/1"
+          }
+        ]
+      },
+      {
+        "room_id": "C",
+        "worker_ids": [
+          "WORKER-C"
+        ],
+        "window": {
+          "start": "2026-09-27T09:00:00-04:00",
+          "end": "2026-09-27T10:00:00-04:00",
+          "timezone": "America/New_York"
+        },
+        "sources": [
+          {
+            "kind": "schedule",
+            "source_id": "SYN-SCHEDULE-001",
+            "version": "1",
+            "locator": "/data/occupancy/2"
+          }
+        ]
+      }
+    ]
+  }
+}
