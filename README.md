@@ -64,3 +64,7 @@ python -m cleanroom_os.fixtures fixtures/mock-facility --resolved --normal-resul
 ```
 
 These commands validate and summarize inputs; they do not approve or execute a plan.
+
+## Deterministic workflow controller
+
+The Python controller now persists revision-specific decisions and workflow state in SQLite, with independent validation gates and an offline, stepwise CLI. See [controller states, demo commands, and boundaries](docs/controller.md). The existing OpenCode conversation does not control this persistent workflow.
