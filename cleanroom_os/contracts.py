@@ -278,10 +278,67 @@ class QAFinding(Contract):
     """An evidence-backed review item, not a final compliance decision."""
 
     finding_id: Identifier
+    code: Text = "unspecified"
+    requirement_id: Identifier | None = None
     kind: Literal["missing", "unmatched", "duplicate", "mismatch", "out_of_limit", "unknown", "blocked"]
     sample_id: Identifier | None
     result_ids: list[Identifier]
     description: Text
+    sources: Evidence
+
+
+class ResultBatch(Contract):
+    """A complete LIMS import snapshot; distinct results may share a sample ID."""
+
+    results: list[LIMSResult]
+
+    @model_validator(mode="after")
+    def unique_result_ids(self) -> Self:
+        """Reject ambiguous record identities without dropping evidence."""
+        unique([r.result_id for r in self.results], "result")
+        return self
+
+
+NonnegativeCount = Annotated[int, Field(strict=True, ge=0)]
+
+
+class EvaluationCounts(Contract):
+    """Separate sample obligations from received-record classifications."""
+
+    known_required: NonnegativeCount
+    expected: NonnegativeCount
+    received: NonnegativeCount
+    matched: NonnegativeCount
+    missing: NonnegativeCount
+    mismatched_samples: NonnegativeCount
+    blocked: NonnegativeCount
+    unknown_count_requirements: NonnegativeCount
+    matched_records: NonnegativeCount
+    mismatched_records: NonnegativeCount
+    unmatched_records: NonnegativeCount
+    duplicate_records: NonnegativeCount
+
+    @model_validator(mode="after")
+    def reconcile(self) -> Self:
+        """Require complete sample and result partitions; duplicates are an overlay."""
+        if self.known_required != self.expected + self.blocked:
+            raise ValueError("Known required count must equal expected plus blocked")
+        if self.expected != self.matched + self.missing + self.mismatched_samples:
+            raise ValueError("Expected samples must reconcile with matched, missing and mismatched samples")
+        if self.received != self.matched_records + self.mismatched_records + self.unmatched_records:
+            raise ValueError("Received records must reconcile with result classifications")
+        if self.duplicate_records > self.received:
+            raise ValueError("Duplicate record count exceeds received count")
+        return self
+
+
+class ResultEvaluation(Contract):
+    """Deterministic evidence for one exact plan revision, never a QA decision."""
+
+    plan_id: Identifier
+    plan_revision: Count
+    counts: EvaluationCounts
+    findings: list[QAFinding]
     sources: Evidence
 
 
@@ -293,6 +350,7 @@ class QAReviewPackage(Contract):
     plan: SamplingPlan
     results: list[LIMSResult]
     findings: list[QAFinding]
+    counts: EvaluationCounts | None = None
     sources: Evidence
 
     @model_validator(mode="after")

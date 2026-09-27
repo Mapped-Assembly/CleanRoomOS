@@ -13,7 +13,7 @@ from pydantic import Field
 
 from cleanroom_os.contracts import (
     Contract, HumanPlanningDecision, HumanQADecision, LIMSResult, PlanningContext,
-    QAReviewPackage, SamplingPlan, State, Unknown, parse_contract,
+    QAReviewPackage, ResultBatch, SamplingPlan, State, Unknown, parse_contract,
 )
 
 
@@ -287,9 +287,3 @@ class Controller:
                 raise WorkflowError('Collection timestamp outside planned window')
             if not comparisons[threshold.operator](r.value, threshold.value):
                 raise WorkflowError('Out-of-limit result requires resolution')
-
-
-class ResultBatch(Contract):
-    """Typed LIMS input envelope; an empty batch is visible missing evidence."""
-
-    results: list[LIMSResult]

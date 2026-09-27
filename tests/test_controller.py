@@ -7,6 +7,7 @@ from pathlib import Path
 from cleanroom_os.adapters import FileInputAdapter, load_context
 from cleanroom_os.controller import Controller, ResultBatch, WorkflowError
 from cleanroom_os.mock_services import FixturePlanner, FixtureReviewer
+from cleanroom_os.evaluation import DeterministicReviewer
 
 ROOT = Path(__file__).resolve().parents[1] / 'fixtures' / 'mock-facility'
 
@@ -186,6 +187,49 @@ class ControllerTests(unittest.TestCase):
         with self.assertRaises(WorkflowError):
             self.controller.propose(ForgedPlanner())
         self.assertEqual(self.controller.snapshot().state, 'validated')
+
+
+    def test_evaluation_reimport_replaces_evidence_and_retains_stable_findings(self) -> None:
+        """Identical imports never append results/findings and still invalidate old reviews."""
+        self.ready(anomalies=True)
+        # Review readiness must be invalidated by a new import before producing a package.
+        payload = ResultBatch(results=self.adapter.load_lims()).model_dump_json()
+        self.controller.receive_results(payload)
+        first = self.controller.prepare_review(DeterministicReviewer(2)).package
+        self.assertEqual(first.counts.received, 7)
+        self.assertEqual(len(first.findings), 5)
+        self.assertEqual(self.controller.snapshot().state, 'review_ready')
+        with self.assertRaises(WorkflowError):
+            self.controller.decide_qa(self.decision(qa=True))
+        stale_decision = self.decision(qa=True)
+        self.controller.receive_results(payload)
+        self.assertIsNone(self.controller.snapshot().package)
+        with self.assertRaises(WorkflowError):
+            self.controller.decide_qa(stale_decision)
+        second = self.controller.prepare_review(DeterministicReviewer(3)).package
+        self.assertEqual(second.results, first.results)
+        self.assertEqual(second.findings, first.findings)
+        self.assertEqual(second.counts, first.counts)
+        self.assertEqual(len(second.results), 7)
+        reopened = Controller(self.path).snapshot()
+        self.assertEqual(reopened.package, second)
+        self.assertEqual(reopened.state, 'review_ready')
+
+    def test_deterministic_normal_review_requires_explicit_qa_decision(self) -> None:
+        """A clean evaluator output prepares evidence and cannot approve a run."""
+        self.context()
+        self.controller.propose(self.planner)
+        with self.assertRaises(WorkflowError):
+            self.controller.receive_results(ResultBatch(results=self.adapter.load_lims(anomalies=False)).model_dump_json())
+        self.controller.decide_plan(self.decision())
+        self.controller.collect(actor='TECH-1', role='manufacturing')
+        self.controller.receive_results(ResultBatch(results=self.adapter.load_lims(anomalies=False)).model_dump_json())
+        snap = self.controller.prepare_review(DeterministicReviewer(1))
+        self.assertEqual(snap.state, 'review_ready')
+        self.assertEqual(snap.package.counts.matched, 6)
+        self.assertEqual(snap.package.findings, [])
+        self.controller.decide_qa(self.decision(qa=True))
+        self.assertEqual(self.controller.snapshot().state, 'qa_approved')
 
 
 if __name__ == '__main__':

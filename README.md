@@ -76,3 +76,11 @@ execution constraints. Blocked obligations remain visible; an independent valida
 checks every proposal before the controller accepts it. See [planning policy, conflicts,
 and revision handling](docs/planning.md). Use `propose --fixture-plan` only to replay
 the original hand-authored plan/LIMS demonstration.
+
+## LIMS matching and review findings
+
+The workflow `review` action now evaluates results against the exact plan revision,
+retaining LIMS evidence and identifying missing, unmatched, duplicate, mismatched,
+out-of-limit and unknown results. [Reconciled counts](docs/evaluation.md) distinguish
+blocked obligations from expected samples. Evaluation prepares the review; QA still
+makes the final decision explicitly.

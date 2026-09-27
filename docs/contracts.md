@@ -28,7 +28,8 @@ Every model exposes `model_json_schema()` for structured-output adapters and `mo
 | PlanningContext | Cross-source consistency and known-room validation |
 | PlannedSample / SamplingPlan / PlanningConflict | Derived sequence, original obligations, and unresolved blockers |
 | LIMSResult | Ingested measurement and source identity, even if unmatched |
-| QAFinding / QAReviewPackage | Evidence-backed review inputs |
+| QAFinding / QAReviewPackage | Evidence-backed review inputs with optional reconciled counts for older package compatibility |
+| ResultBatch / ResultEvaluation / EvaluationCounts | LIMS snapshot, exact-revision findings and separate sample/record counts |
 | HumanPlanningDecision / HumanQADecision | Revision-specific operational and final QA decisions |
 | WorkflowTransition | Requested state change with expected state and attribution |
 | ValidationIssue / ContractValidationError | Structured failures for controllers/adapters |
@@ -41,10 +42,10 @@ Counts use positive strict integers. An unknown count or threshold must use `{ "
 
 Plans retain the original requirement list. Each scheduled sample cites its requirement and scheduling source. Missing sample counts require an explicit conflict; over-counts and identity changes fail. A blocked plan remains a valid *proposal*, not an executable or approved plan.
 
-LIMS ingestion deliberately permits sample/plan mismatches so the later evaluator can report them. Review packages reject ambiguous duplicate record IDs but may hold distinct records concerning the same sample. QA decision role is restricted to `qa`; role strings do not authenticate a human.
+LIMS ingestion deliberately permits sample/plan mismatches so the deterministic evaluator can report them. Review packages reject ambiguous duplicate record IDs but may hold distinct records concerning the same sample. QA decision role is restricted to `qa`; role strings do not authenticate a human.
 
-## Boundaries for subsequent issues
+## Validation and workflow boundaries
 
-These models validate structure and selected cross-record invariants. They do not perform scheduling, match LIMS results, check window feasibility against occupancy, enforce actual state transitions, authenticate roles, persist records, or execute approvals. The controller must compare derived requirements against the validated input context, check source locators against actual documents, validate the current revision and completeness, and authorize every transition. Issues #3–#6 own those behaviors. The current OpenCode conversation simulation is unchanged.
+These models validate structure and selected cross-record invariants. They do not perform scheduling, match LIMS results, check window feasibility against occupancy, enforce actual state transitions, authenticate roles, persist records, or execute approvals. The controller must compare derived requirements against the validated input context, check source locators against actual documents, validate the current revision and completeness, and authorize every transition. The [controller](controller.md), [planner](planning.md), and [evaluator](evaluation.md) implement the deterministic gates, feasibility checks, and result matching. The current OpenCode conversation simulation is unchanged.
 
 Tests use small synthetic payload builders, not the full mock facility deliverable in issue #2.
