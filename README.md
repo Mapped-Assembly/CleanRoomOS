@@ -35,3 +35,9 @@ See [synthetic scenarios and manual acceptance checks](docs/scenarios.md). Agent
 This initial version consists of OpenCode agent configuration and prompts. It does not control equipment, send external notifications, authenticate reviewer roles, persist an audit database, or certify compliance. The ledger lives in the conversation; retain the report and event ledger before ending a session. Prompt instructions guide the simulation, but a production approval gate requires a separately enforced state machine and authenticated decision storage.
 
 All four agents deny operational tools. Only the coordinator can invoke the three named subagents; specialists return their assessments as text. File read/search tools are available for supplied context. A configured OpenCode installation and model access are required to exercise live delegation.
+
+## Shared SOP context
+
+[CR-SOP-001: Cleanroom Operations, Task Review, and Exception Handling](docs/cleanroom-sop.md) is the shared simulation SOP. `opencode.json` loads the complete file through project-level `instructions`, so the coordinator and all three subagents receive it, including direct subagent invocations. Each role prompt also requires reading the SOP if it is missing from context and pausing if it cannot be obtained. Keep the SOP in this one file when revising it.
+
+After pulling this update, restart OpenCode to reload the project configuration. Facility-specific placeholders remain unapproved until manufacturing and QA complete them.

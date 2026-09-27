@@ -52,5 +52,8 @@
         "grep": "allow"
       }
     }
-  }
+  },
+  "instructions": [
+    "docs/cleanroom-sop.md"
+  ]
 }
