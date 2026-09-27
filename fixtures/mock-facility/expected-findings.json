@@ -1,0 +1,25 @@
+{
+  "synthetic": true,
+  "data": {
+    "plan_revision": 2,
+    "normal": [
+      "SAMPLE-A-2",
+      "SAMPLE-B-1"
+    ],
+    "missing": [
+      "SAMPLE-B-2"
+    ],
+    "duplicate": [
+      "SAMPLE-A-1"
+    ],
+    "unmatched": [
+      "SAMPLE-UNPLANNED"
+    ],
+    "mismatch": [
+      "SAMPLE-C-2"
+    ],
+    "out_of_limit": [
+      "SAMPLE-C-1"
+    ]
+  }
+}

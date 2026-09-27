@@ -53,3 +53,14 @@ python -m unittest discover -s tests -v
 ```
 
 This contract layer is independent of the existing OpenCode conversation simulation.
+
+## Mock facility and offline inputs
+
+[The synthetic three-room scenario](fixtures/mock-facility/README.md) includes a blocked Room B, an explicit human-supplied replacement schedule, normal/anomalous LIMS results, and resolvable source evidence. File-backed adapters implement `cleanroom_os.adapters.InputAdapter`.
+
+```bash
+python -m cleanroom_os.fixtures fixtures/mock-facility
+python -m cleanroom_os.fixtures fixtures/mock-facility --resolved --normal-results
+```
+
+These commands validate and summarize inputs; they do not approve or execute a plan.

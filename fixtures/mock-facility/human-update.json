@@ -1,0 +1,26 @@
+{
+  "synthetic": true,
+  "data": {
+    "update_id": "SYN-UPDATE-001",
+    "actor_id": "MFG-001",
+    "role": "manufacturing",
+    "supplied_at": "2026-09-27T08:55:00-04:00",
+    "previous_schedule_version": "1",
+    "replacement_schedule_version": "2",
+    "reason": "Synthetic manufacturing input: move Room B occupancy to free 11:00\u201311:30. This is supplied fixture data, not an inferred workaround.",
+    "sources": [
+      {
+        "kind": "human",
+        "source_id": "SYN-UPDATE-001",
+        "version": "1",
+        "locator": "/data/reason"
+      },
+      {
+        "kind": "schedule",
+        "source_id": "SYN-SCHEDULE-001",
+        "version": "2",
+        "locator": "/data/availability/1"
+      }
+    ]
+  }
+}

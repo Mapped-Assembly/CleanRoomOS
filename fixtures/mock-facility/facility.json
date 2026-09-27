@@ -1,0 +1,66 @@
+{
+  "synthetic": true,
+  "data": {
+    "facility_id": "SYN-FACILITY-001",
+    "name": "Synthetic demonstration facility",
+    "rooms": [
+      {
+        "room_id": "A",
+        "name": "Synthetic Room A",
+        "sources": [
+          {
+            "kind": "sop",
+            "source_id": "SYN-SAMPLING-001",
+            "version": "1",
+            "locator": "/data/requirements/0"
+          }
+        ]
+      },
+      {
+        "room_id": "B",
+        "name": "Synthetic Room B",
+        "sources": [
+          {
+            "kind": "sop",
+            "source_id": "SYN-SAMPLING-001",
+            "version": "1",
+            "locator": "/data/requirements/1"
+          }
+        ]
+      },
+      {
+        "room_id": "C",
+        "name": "Synthetic Room C",
+        "sources": [
+          {
+            "kind": "sop",
+            "source_id": "SYN-SAMPLING-001",
+            "version": "1",
+            "locator": "/data/requirements/2"
+          }
+        ]
+      }
+    ],
+    "execution": {
+      "technician_id": "TECH-001",
+      "sample_minutes": 5,
+      "setup_minutes_per_room": 5,
+      "travel_minutes_between_rooms": 5,
+      "collection_mode": "sequential",
+      "sources": [
+        {
+          "kind": "recipe",
+          "source_id": "SYN-EXECUTION-001",
+          "version": "1",
+          "locator": "/data/execution"
+        }
+      ],
+      "technician_availability": {
+        "start": "2026-09-27T09:00:00-04:00",
+        "end": "2026-09-27T17:00:00-04:00",
+        "timezone": "America/New_York"
+      },
+      "starting_room_id": "A"
+    }
+  }
+}

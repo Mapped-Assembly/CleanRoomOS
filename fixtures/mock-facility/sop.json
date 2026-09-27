@@ -1,0 +1,90 @@
+{
+  "synthetic": true,
+  "data": {
+    "document_id": "SYN-SAMPLING-001",
+    "version": "1",
+    "requirements": [
+      {
+        "requirement_id": "REQ-A",
+        "room_id": "A",
+        "sample_type": "air",
+        "count": 2,
+        "threshold": {
+          "value": 10,
+          "unit": "CFU/m3",
+          "operator": "le",
+          "sources": [
+            {
+              "kind": "sop",
+              "source_id": "SYN-SAMPLING-001",
+              "version": "1",
+              "locator": "/data/requirements/0"
+            }
+          ]
+        },
+        "sources": [
+          {
+            "kind": "sop",
+            "source_id": "SYN-SAMPLING-001",
+            "version": "1",
+            "locator": "/data/requirements/0"
+          }
+        ]
+      },
+      {
+        "requirement_id": "REQ-B",
+        "room_id": "B",
+        "sample_type": "air",
+        "count": 2,
+        "threshold": {
+          "value": 10,
+          "unit": "CFU/m3",
+          "operator": "le",
+          "sources": [
+            {
+              "kind": "sop",
+              "source_id": "SYN-SAMPLING-001",
+              "version": "1",
+              "locator": "/data/requirements/1"
+            }
+          ]
+        },
+        "sources": [
+          {
+            "kind": "sop",
+            "source_id": "SYN-SAMPLING-001",
+            "version": "1",
+            "locator": "/data/requirements/1"
+          }
+        ]
+      },
+      {
+        "requirement_id": "REQ-C",
+        "room_id": "C",
+        "sample_type": "air",
+        "count": 2,
+        "threshold": {
+          "value": 10,
+          "unit": "CFU/m3",
+          "operator": "le",
+          "sources": [
+            {
+              "kind": "sop",
+              "source_id": "SYN-SAMPLING-001",
+              "version": "1",
+              "locator": "/data/requirements/2"
+            }
+          ]
+        },
+        "sources": [
+          {
+            "kind": "sop",
+            "source_id": "SYN-SAMPLING-001",
+            "version": "1",
+            "locator": "/data/requirements/2"
+          }
+        ]
+      }
+    ]
+  }
+}
