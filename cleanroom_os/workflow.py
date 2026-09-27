@@ -7,7 +7,8 @@ from uuid import uuid4
 
 from cleanroom_os.adapters import FileInputAdapter, load_context
 from cleanroom_os.controller import Controller, ResultBatch, WorkflowError
-from cleanroom_os.mock_services import FixturePlanner, FixtureReviewer
+from cleanroom_os.mock_services import FixturePlanner
+from cleanroom_os.evaluation import DeterministicReviewer
 from cleanroom_os.planning import DeterministicPlanner
 
 
@@ -45,7 +46,7 @@ def main() -> None:
         elif args.action == 'results':
             controller.receive_results(ResultBatch(results=adapter.load_lims(anomalies=not args.normal)).model_dump_json())
         elif args.action == 'review':
-            controller.prepare_review(FixtureReviewer(controller.snapshot().last_package_revision+1))
+            controller.prepare_review(DeterministicReviewer(controller.snapshot().last_package_revision+1))
         else:
             snapshot = controller.snapshot()
             if snapshot.plan is None or args.revision is None:
