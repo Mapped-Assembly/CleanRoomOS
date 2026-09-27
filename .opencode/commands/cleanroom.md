@@ -1,6 +1,6 @@
 ---
-description: Explain the Python-controlled sampling POC entry point
-agent: cleanroom-help
+description: Plan sampling and review synthetic lab results interactively
+agent: cleanroom
 ---
-Explain the migration to `python -m cleanroom_os.workflow` and docs/agents.md.
-This slash command does not delegate, execute or authorize any workflow. Context: $ARGUMENTS
+Help with this cleanroom workflow request using the controller tools: $ARGUMENTS
+Inspect current status first. Preserve explicit manufacturing and QA decisions.

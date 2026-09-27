@@ -170,7 +170,12 @@ class AgentTests(unittest.TestCase):
     def test_active_config_has_no_autonomous_coordinator_or_tools(self):
         config=json.loads((ROOT/'opencode.json').read_text())
         self.assertEqual(config['permission'],{'*':'deny'})
+        self.assertEqual(config['default_agent'], 'cleanroom')
+        self.assertEqual(config['agent']['cleanroom']['permission'],
+                         {'*':'deny', 'cleanroom_workflow':'allow', 'cleanroom_decision':'ask'})
         for name,agent in config['agent'].items():
+            if name == 'cleanroom':
+                continue
             self.assertEqual(agent['permission'],{'*':'deny'})
             self.assertEqual(agent['steps'],1)
             self.assertNotIn(name,['cleanroom','cleanroom-operation','cleanroom-risk','cleanroom-compliance'])

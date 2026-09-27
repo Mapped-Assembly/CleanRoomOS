@@ -1,6 +1,12 @@
 # Three bounded OpenCode adapters
 
-The entry point is `python -m cleanroom_os.workflow`, not a conversational coordinator.
+The user entry point is `opencode --agent cleanroom` (also the default agent).
+It uses the existing OpenCode model and two restricted custom tools to call the
+Python controller, bootstrapping `.venv` on first use. No separate server is needed.
+Its synthetic fixture workflow persists in `cleanroom-interactive.sqlite`. Human
+decisions require explicit confirmation through `cleanroom_decision`.
+
+The developer CLI entry point is `python -m cleanroom_os.workflow`.
 `--mode offline` (default) uses deterministic requirements/planning/review adapters.
 `--mode opencode` calls the three configured OpenCode roles through data-only HTTP
 sessions. The mode is explicit per action, and a live failure never switches modes.
@@ -85,7 +91,7 @@ is stored as labeled `agent_explanation` JSON within the package; it is untruste
 commentary, not evidence of execution or approval. The deterministic evidence remains
 the source of truth for reviewers and gates.
 
-All roles deny tools, including shell, file access, network tools, Task and MCP calls.
+All three bounded subagent roles deny tools, including shell, file access, network tools, Task and MCP calls.
 The HTTP client verifies the server's effective project configuration before creating
 a fresh session and applies a session-wide deny rule. It pins the agent and model,
 uses `prompt_async`, polls to a fixed deadline, rejects tool-call parts and model/agent
@@ -100,7 +106,9 @@ requirements failure invalidates context and dependent approvals. Other failed
 proposals preserve the last committed snapshot. Calls serialize writes within a
 single local run; run one mutating CLI action at a time. Roles are not OS isolation:
 a person with Python/database access is trusted, and a configured OpenCode server
-is trusted infrastructure. Do not add controller/decision tools to the agents.
+is trusted infrastructure. Do not add controller/decision tools to the bounded subagents. The primary
+interactive assistant has only the two named controller tools; it cannot use shell,
+file editing or delegation. Its decision tool requests human confirmation.
 
 ## Tests and live acceptance
 
@@ -128,7 +136,8 @@ provider/model is configured. Do not treat the passing offline tests as that acc
 
 The previous operation/risk/compliance prompts and revision 0.1 SOP/scenarios are
 archived under `docs/legacy`. They are not referenced by active configuration.
-`/cleanroom` now routes only to entry-point help; it cannot delegate or approve work.
+`/cleanroom` routes to the interactive assistant; it cannot delegate or independently
+approve work. The tool bridge rejects calls from agents other than `cleanroom`.
 The active shared SOP is revision 0.2. Restart OpenCode after updating the config.
 Reload context through the controller to create a fresh validated run revision.
 

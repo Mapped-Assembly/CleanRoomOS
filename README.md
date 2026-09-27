@@ -1,5 +1,21 @@
 # CleanRoomOS
 
+```powershell
+git clone https://github.com/isayahc/CleanRoomOS.git
+cd CleanRoomOS
+opencode --agent cleanroom
+```
+
+Requires OpenCode already connected to your model and Python 3.11+. Then type:
+**“Plan today’s sampling.”** The assistant sets up the local Python dependencies on
+first use and walks you through room conflicts, manufacturing approval, simulated
+collection, lab results, and human QA review. No separate server, password, or model
+environment variable is needed. Your existing OpenCode model selection is used.
+
+The interactive demo uses the bundled synthetic fixture plan/results through the
+validated Python controller. State persists in `cleanroom-interactive.sqlite`.
+Manufacturing and QA decisions require your explicit confirmation.
+
 A local cleanroom sampling POC: preserve SOP/recipe obligations, plan sampling around
 actual room constraints, match simulated LIMS results, and prepare evidence for a
 separate human QA decision.
@@ -15,7 +31,7 @@ agents return bounded, cited proposals; they cannot execute tasks or approve wor
 | Manufacturing | Supply constraints and explicitly allow/disallow a plan revision | Conflicts cannot be waived |
 | Human QA | Approve, reject or request resolution for an exact package | Separate decision with independent completion checks |
 
-## Start offline
+## Developer CLI: offline
 
 No model or credentials are required. Python 3.11+ is required.
 
@@ -35,7 +51,7 @@ Follow the [full offline controller demo](docs/controller.md) for normal/anomalo
 LIMS replay and human decisions. Use `--fixture-plan` for the hand-authored LIMS
 fixtures; generated plans have their own stable sample IDs.
 
-## Use OpenCode agents
+## Developer live-adapter acceptance test
 
 With Python 3.11+, Git, and an authenticated OpenCode installation, run the live
 acceptance demo from PowerShell in this checkout:
@@ -54,7 +70,8 @@ repository, and use `--mode opencode` on `context`, `propose`, and `review`.
 `OPENCODE_MODEL` must name an explicit `provider/model`; there is no model or offline
 fallback. See [Windows setup, role contracts, live tests and migration](docs/agents.md).
 
-`opencode` or `/cleanroom` displays entry-point help only. The old autonomous
+`opencode`, `opencode --agent cleanroom`, and `/cleanroom` open the interactive
+controller-backed assistant. The old autonomous
 operation/risk/compliance conversation is [retired](docs/legacy/README.md). Direct
 subagent calls cannot change the SQLite workflow.
 
