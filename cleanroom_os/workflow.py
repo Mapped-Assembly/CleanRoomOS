@@ -8,6 +8,7 @@ from uuid import uuid4
 from cleanroom_os.adapters import FileInputAdapter, load_context
 from cleanroom_os.controller import Controller, ResultBatch, WorkflowError
 from cleanroom_os.mock_services import FixturePlanner, FixtureReviewer
+from cleanroom_os.planning import DeterministicPlanner
 
 
 def main() -> None:
@@ -17,6 +18,7 @@ def main() -> None:
     parser.add_argument('--db', type=Path, required=True)
     parser.add_argument('--fixtures', type=Path, default=Path('fixtures/mock-facility'))
     parser.add_argument('--resolved', action='store_true')
+    parser.add_argument('--fixture-plan', action='store_true', help='Use hand-authored plan for fixture LIMS replay only')
     parser.add_argument('--normal', action='store_true')
     parser.add_argument('--actor', default='demo-user')
     parser.add_argument('--role', choices=['manufacturing','qa'], default='manufacturing')
@@ -36,7 +38,8 @@ def main() -> None:
         if args.action == 'context':
             controller.load_context_from(lambda: load_context(adapter,resolved=args.resolved).model_dump_json(), actor=args.actor,role=args.role,reason=args.reason)
         elif args.action == 'propose':
-            controller.propose(FixturePlanner(args.fixtures))
+            controller.propose(FixturePlanner(args.fixtures) if args.fixture_plan else
+                               DeterministicPlanner(controller.snapshot().last_revision + 1))
         elif args.action == 'collect':
             controller.collect(actor=args.actor,role=args.role)
         elif args.action == 'results':

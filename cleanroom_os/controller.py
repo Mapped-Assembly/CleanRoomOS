@@ -17,6 +17,9 @@ from cleanroom_os.contracts import (
 )
 
 
+from cleanroom_os.planning import validate_plan
+
+
 class Snapshot(Contract):
     """Persisted run state, with prior evidence retained in the event ledger."""
 
@@ -146,29 +149,7 @@ class Controller:
             raise WorkflowError('Validated context required')
         if plan.revision <= s.last_revision:
             raise WorkflowError('Plan revision must increase monotonically')
-        if plan.requirements != s.context.recipe.requirements:
-            raise WorkflowError('Plan must preserve the exact authoritative recipe obligations')
-        for requirement in s.context.sop.requirements:
-            if not any((r.room_id, r.sample_type, r.count) == (requirement.room_id, requirement.sample_type, requirement.count)
-                       for r in plan.requirements):
-                raise WorkflowError('SOP obligation missing from recipe/plan')
-        windows = {a.room_id: a for a in s.context.schedule.availability}
-        previous = None
-        for sample in plan.samples:
-            access = windows.get(sample.room_id)
-            w = sample.window
-            if access is None or not any(a.start <= w.start < w.end <= a.end for a in access.windows):
-                raise WorkflowError('Sample outside known room availability')
-            if not all(source in sample.sources for source in access.sources):
-                raise WorkflowError('Sample must cite current schedule evidence')
-            shift = s.context.schedule.shift
-            if not shift.start <= w.start < w.end <= shift.end:
-                raise WorkflowError('Sample outside shift')
-            if any(o.room_id == sample.room_id and w.start < o.window.end and o.window.start < w.end for o in s.context.schedule.occupancy):
-                raise WorkflowError('Sample overlaps room occupancy')
-            if previous is not None and w.start < previous:
-                raise WorkflowError('Sequential sample windows overlap or are unordered')
-            previous = w.end
+        validate_plan(s.context, plan)
 
     def propose(self, service: ProposalService, *, attempts: int = 2) -> Snapshot:
         """Call and validate a service with at most two visible attempts."""

@@ -195,6 +195,7 @@ class PlanningConflict(Contract):
     """An unresolved obstacle retaining the affected requirement identity."""
 
     conflict_id: Identifier
+    code: Text = "unspecified"
     requirement_id: Identifier
     room_id: Identifier
     reason: Text
@@ -350,6 +351,19 @@ class WorkflowTransition(Contract):
     sources: Evidence
 
 
+class ExecutionAssumptions(Contract):
+    """Explicit scenario timing and resource inputs, not planner defaults."""
+
+    technician_id: Identifier
+    technician_availability: TimeWindow | Unknown
+    starting_room_id: Identifier
+    sample_minutes: Count | Unknown
+    setup_minutes_per_room: Annotated[int, Field(strict=True, ge=0)] | Unknown
+    travel_minutes_between_rooms: Annotated[int, Field(strict=True, ge=0)] | Unknown
+    collection_mode: Literal["sequential"]
+    sources: Evidence
+
+
 class PlanningContext(Contract):
     """Validated authoritative inputs with no silent source precedence override."""
 
@@ -357,12 +371,15 @@ class PlanningContext(Contract):
     recipe: Recipe
     rooms: Annotated[list[Room], Field(min_length=1)]
     schedule: DailySchedule
+    execution: ExecutionAssumptions | None = None
 
     @model_validator(mode="after")
     def coherent(self) -> Self:
         """Reject unknown rooms and contradictory obligations for the same sample type."""
         unique([r.room_id for r in self.rooms], "room")
         rooms = {r.room_id for r in self.rooms}
+        if self.execution and self.execution.starting_room_id not in rooms:
+            raise ValueError("Execution starts in an unknown room")
         seen: dict[tuple[str, str], SamplingRequirement] = {}
         for r in [*self.sop.requirements, *self.recipe.requirements]:
             if r.room_id not in rooms:
