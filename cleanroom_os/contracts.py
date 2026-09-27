@@ -351,6 +351,7 @@ class QAReviewPackage(Contract):
     results: list[LIMSResult]
     findings: list[QAFinding]
     counts: EvaluationCounts | None = None
+    agent_explanation: Annotated[str, Field(max_length=20000)] | None = None
     context: PlanningContext | None = None
     prior_decisions: list[HumanPlanningDecision | HumanQADecision] = Field(default_factory=list)
     collection_status: Literal["not_collected", "simulated"] = "not_collected"

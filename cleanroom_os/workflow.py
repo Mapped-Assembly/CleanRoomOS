@@ -1,4 +1,4 @@
-"""Stepwise, offline controller demo with explicitly unauthenticated human roles."""
+"""Stepwise controller with offline or bounded agents and unauthenticated demo roles."""
 import argparse
 import json
 from datetime import datetime, timezone
@@ -10,6 +10,8 @@ from cleanroom_os.controller import Controller, ResultBatch, WorkflowError
 from cleanroom_os.mock_services import FixturePlanner
 from cleanroom_os.evaluation import DeterministicReviewer
 from cleanroom_os.planning import DeterministicPlanner
+from cleanroom_os.agents import RequirementsAgent, PlanningAgent, ResultsReviewAgent
+from cleanroom_os.opencode import OpenCodeTransport
 
 
 def main() -> None:
@@ -17,6 +19,9 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('action', choices=['status','events','notifications','package','notify-qa','context','propose','allow','disallow','collect','results','review','qa-approve','qa-reject','qa-resolve'])
     parser.add_argument('--db', type=Path, required=True)
+    parser.add_argument('--mode', choices=['offline', 'opencode'], default='offline')
+    parser.add_argument('--model', help='Explicit provider/model; otherwise OPENCODE_MODEL')
+    parser.add_argument('--agent-timeout', type=int, default=120)
     parser.add_argument('--fixtures', type=Path, default=Path('fixtures/mock-facility'))
     parser.add_argument('--resolved', action='store_true')
     parser.add_argument('--fixture-plan', action='store_true', help='Use hand-authored plan for fixture LIMS replay only')
@@ -31,6 +36,9 @@ def main() -> None:
     controller = Controller(args.db)
     adapter = FileInputAdapter(args.fixtures)
     try:
+        if args.mode == 'opencode' and args.fixture_plan:
+            raise WorkflowError('--fixture-plan is only available in offline mode')
+        transport = OpenCodeTransport(model=args.model, timeout=args.agent_timeout) if args.mode == 'opencode' else None
         if args.action == 'status':
             print(controller.snapshot().model_dump_json(indent=2))
             return
@@ -48,16 +56,21 @@ def main() -> None:
         if args.action == 'notify-qa':
             controller.notify_qa()
         elif args.action == 'context':
-            controller.load_context_from(lambda: load_context(adapter,resolved=args.resolved).model_dump_json(), actor=args.actor,role=args.role,reason=args.reason)
+            controller.load_context_from(lambda: load_context(adapter,resolved=args.resolved).model_dump_json(), actor=args.actor,role=args.role,reason=args.reason,
+                                         requirements_service=RequirementsAgent(transport) if transport else None,
+                                         attempts=2 if transport else 1)
         elif args.action == 'propose':
-            controller.propose(FixturePlanner(args.fixtures) if args.fixture_plan else
-                               DeterministicPlanner(controller.snapshot().last_revision + 1))
+            revision = controller.snapshot().last_revision + 1
+            service = PlanningAgent(transport, revision) if transport else (
+                FixturePlanner(args.fixtures) if args.fixture_plan else DeterministicPlanner(revision))
+            controller.propose(service)
         elif args.action == 'collect':
             controller.collect(actor=args.actor,role=args.role)
         elif args.action == 'results':
             controller.receive_results(ResultBatch(results=adapter.load_lims(anomalies=not args.normal)).model_dump_json())
         elif args.action == 'review':
-            controller.prepare_review(DeterministicReviewer(controller.snapshot().last_package_revision+1))
+            revision = controller.snapshot().last_package_revision + 1
+            controller.prepare_review(ResultsReviewAgent(transport, revision) if transport else DeterministicReviewer(revision))
         else:
             snapshot = controller.snapshot()
             if snapshot.plan is None or args.revision is None:

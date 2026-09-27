@@ -151,8 +151,8 @@ class ControllerTests(unittest.TestCase):
         self.assertEqual(self.controller.snapshot().state, 'validated')
         self.assertEqual([e['status'] for e in self.controller.events()][-2:], ['error', 'error'])
 
-    def test_anomalies_cannot_be_approved_even_if_service_omits_findings(self) -> None:
-        """QA gate evaluates evidence independently of the mock review service."""
+    def test_anomalies_cannot_be_approved_after_review(self) -> None:
+        """QA gate rejects anomaly evidence even after package preparation."""
         self.ready(anomalies=True)
         with self.assertRaises(WorkflowError):
             self.controller.decide_qa(self.decision(qa=True))
