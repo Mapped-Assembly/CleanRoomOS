@@ -1,6 +1,6 @@
 {
   "$schema": "https://opencode.ai/config.json",
-  "default_agent": "cleanroom-help",
+  "default_agent": "cleanroom",
   "permission": {
     "*": "deny"
   },
@@ -39,6 +39,16 @@
       "steps": 1,
       "permission": {
         "*": "deny"
+      }
+    },
+    "cleanroom": {
+      "description": "Interactive cleanroom sampling and QA demo",
+      "mode": "primary",
+      "prompt": "{file:./prompts/cleanroom.md}",
+      "permission": {
+        "*": "deny",
+        "cleanroom_workflow": "allow",
+        "cleanroom_decision": "ask"
       }
     }
   },

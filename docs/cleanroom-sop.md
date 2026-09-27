@@ -15,8 +15,10 @@ supplied, versioned SOP/recipe/schedule/execution documents. Missing facts are u
 - Results-review Agent explains controller-computed matches/findings and drafts a
   sourced summary. It cannot change evidence, remove findings, or issue approval.
 - Python owns SQLite state, validation, revisions, retries, and transitions. Agent
-  replies are untrusted data. No agent has filesystem, shell, network, Task, MCP,
-  human-decision or controller tools. Direct invocation cannot advance the workflow.
+  replies are untrusted data. The three bounded subagents have no filesystem, shell,
+  network, Task, MCP, human-decision or controller tools. Direct subagent invocation
+  cannot advance the workflow. The primary `cleanroom` interface exposes only
+  validated controller actions and a human-confirmed decision tool.
 - Manufacturing supplies operational source corrections and an explicit allow or
   disallow for the exact plan revision. Unresolved conflicts cannot be waived.
 - Only a human QA role can approve/reject/request resolution for the exact package
