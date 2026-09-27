@@ -351,6 +351,7 @@ class QAReviewPackage(Contract):
     results: list[LIMSResult]
     findings: list[QAFinding]
     counts: EvaluationCounts | None = None
+    agent_explanation: Annotated[str, Field(max_length=20000)] | None = None
     sources: Evidence
 
     @model_validator(mode="after")

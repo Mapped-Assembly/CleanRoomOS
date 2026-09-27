@@ -1,86 +1,72 @@
 # CleanRoomOS
 
-An OpenCode simulation of continuous interaction between cleanroom operators, manufacturing staff, QA, and three specialist AI subagents.
+A local cleanroom sampling POC: preserve SOP/recipe obligations, plan sampling around
+actual room constraints, match simulated LIMS results, and prepare evidence for a
+separate human QA decision.
 
-| Subagent | Responsibility |
-| --- | --- |
-| `cleanroom-operation` | Generate one reviewable task from shift context |
-| `cleanroom-risk` | Classify risk as `none`, `low`, `medium`, or `high`; attempt de-risking for medium/high tasks |
-| `cleanroom-compliance` | Produce the **Tracking and trending report** from task, risk, decision, and outcome records |
+The Python controller owns persisted state and validation. Three optional OpenCode
+agents return bounded, cited proposals; they cannot execute tasks or approve work.
 
-The `cleanroom` primary agent coordinates these three subagents. Medium/high **residual** risk pauses the cycle for manufacturing or QA:
+| Role | Responsibility | Enforced boundary |
+|---|---|---|
+| Requirements Agent | Extract applicable structured SOP/recipe requirements and gaps | Exact authoritative counts, thresholds and citations must survive validation |
+| Planning Agent | Propose sequence and timing | Independent checks of obligations, access, occupancy, duration and resources |
+| Results-review Agent | Explain findings and draft a QA summary | Controller-computed evidence, findings and counts cannot be changed |
+| Manufacturing | Supply constraints and explicitly allow/disallow a plan revision | Conflicts cannot be waived |
+| Human QA | Approve, reject or request resolution for an exact package | Separate decision with independent completion checks |
 
-> Operation Agent is attempting to do {Task} allow or disallow.
+## Start offline
 
-Both role audiences are named in the conversation. Either selected role can decide in this initial demo. Approval applies only to the displayed task revision. Disallowed work does not proceed. Low/none residual risk can proceed to a clearly labeled hypothetical outcome. Reports retain initial risk, attempted mitigations, residual risk, human decisions, and pending work.
-
-## Run
-
-Install and configure [OpenCode](https://opencode.ai/docs/) with your chosen model/provider, then:
-
-```bash
-git clone https://github.com/isayahc/CleanRoomOS.git
-cd CleanRoomOS
-opencode --agent cleanroom
-```
-
-Enter `/cleanroom` and provide your scenario, observations, and role (`manufacturing` or `qa`). You can also pass context directly, for example `/cleanroom I am QA. Simulate a shift reviewing incomplete monitoring records.`
-
-When prompted, respond with `allow T001 r1` or `disallow T001 r1`, substituting the displayed ID and revision. Use `continue`, new observations, `report`, or `stop` to steer subsequent cycles. This is turn-by-turn interaction, not an unattended background process.
-
-See [synthetic scenarios and manual acceptance checks](docs/scenarios.md). Agent definitions use OpenCode's [documented configuration format](https://opencode.ai/docs/agents/). No provider/model is hardcoded, and no Python dependency is required.
-
-## Scope
-
-This initial version consists of OpenCode agent configuration and prompts. It does not control equipment, send external notifications, authenticate reviewer roles, persist an audit database, or certify compliance. The ledger lives in the conversation; retain the report and event ledger before ending a session. Prompt instructions guide the simulation, but a production approval gate requires a separately enforced state machine and authenticated decision storage.
-
-All four agents deny operational tools. Only the coordinator can invoke the three named subagents; specialists return their assessments as text. File read/search tools are available for supplied context. A configured OpenCode installation and model access are required to exercise live delegation.
-
-## Shared SOP context
-
-[CR-SOP-001: Cleanroom Operations, Task Review, and Exception Handling](docs/cleanroom-sop.md) is the shared simulation SOP. `opencode.json` loads the complete file through project-level `instructions`, so the coordinator and all three subagents receive it, including direct subagent invocations. Each role prompt also requires reading the SOP if it is missing from context and pausing if it cannot be obtained. Keep the SOP in this one file when revising it.
-
-After pulling this update, restart OpenCode to reload the project configuration. Facility-specific placeholders remain unapproved until manufacturing and QA complete them.
-
-## Python contracts
-
-The sampling POC now has typed JSON exchange contracts in `cleanroom_os.contracts`.
-See [contract usage, authority rules, and validation boundaries](docs/contracts.md).
+No model or credentials are required. Python 3.11+ is required.
 
 ```bash
 python -m pip install -e .
+python -m cleanroom_os.workflow context --db cleanroom-demo.sqlite
+python -m cleanroom_os.workflow propose --db cleanroom-demo.sqlite
+python -m cleanroom_os.workflow status --db cleanroom-demo.sqlite
+```
+
+The synthetic baseline schedules A within 09:00–09:30, C after 10:00, and retains B's
+blocked obligations. Manufacturing must explicitly supply the replacement schedule
+before a new revision can resolve B. Approval, simulated collection, result entry,
+and QA decisions are separate actions.
+
+Follow the [full offline controller demo](docs/controller.md) for normal/anomalous
+LIMS replay and human decisions. Use `--fixture-plan` for the hand-authored LIMS
+fixtures; generated plans have their own stable sample IDs.
+
+## Use OpenCode agents
+
+Configure an OpenCode provider/model you can access, start `opencode serve` from this
+repository, and use `--mode opencode` on `context`, `propose`, and `review`.
+`OPENCODE_MODEL` must name an explicit `provider/model`; there is no model or offline
+fallback. See [Windows setup, role contracts, live tests and migration](docs/agents.md).
+
+`opencode` or `/cleanroom` displays entry-point help only. The old autonomous
+operation/risk/compliance conversation is [retired](docs/legacy/README.md). Direct
+subagent calls cannot change the SQLite workflow.
+
+## Evidence and checks
+
+- [Shared workflow SOP](docs/cleanroom-sop.md): authority and human decisions
+- [Typed contracts](docs/contracts.md): JSON boundaries and source identity
+- [Synthetic facility](fixtures/mock-facility/README.md): rooms, constraints and source evidence
+- [Planning](docs/planning.md): scheduling, structured conflicts and revisions
+- [LIMS evaluation](docs/evaluation.md): exact-revision matching and reconciled counts
+- [Scenarios](docs/scenarios.md): current offline and agent acceptance cases
+
+```bash
 python -m unittest discover -s tests -v
 ```
 
-This contract layer is independent of the existing OpenCode conversation simulation.
+Default tests run offline, including fake-HTTP OpenCode protocol tests and injected
+invalid responses. The real-model integration test is opt-in and fails visibly if
+the configured provider rejects the request.
 
-## Mock facility and offline inputs
+## Scope
 
-[The synthetic three-room scenario](fixtures/mock-facility/README.md) includes a blocked Room B, an explicit human-supplied replacement schedule, normal/anomalous LIMS results, and resolvable source evidence. File-backed adapters implement `cleanroom_os.adapters.InputAdapter`.
-
-```bash
-python -m cleanroom_os.fixtures fixtures/mock-facility
-python -m cleanroom_os.fixtures fixtures/mock-facility --resolved --normal-results
-```
-
-These commands validate and summarize inputs; they do not approve or execute a plan.
-
-## Deterministic workflow controller
-
-The Python controller now persists revision-specific decisions and workflow state in SQLite, with independent validation gates and an offline, stepwise CLI. See [controller states, demo commands, and boundaries](docs/controller.md). The existing OpenCode conversation does not control this persistent workflow.
-
-## Deterministic sampling planner
-
-The workflow CLI now generates plans from validated SOP, recipe, schedule and explicit
-execution constraints. Blocked obligations remain visible; an independent validator
-checks every proposal before the controller accepts it. See [planning policy, conflicts,
-and revision handling](docs/planning.md). Use `propose --fixture-plan` only to replay
-the original hand-authored plan/LIMS demonstration.
-
-## LIMS matching and review findings
-
-The workflow `review` action now evaluates results against the exact plan revision,
-retaining LIMS evidence and identifying missing, unmatched, duplicate, mismatched,
-out-of-limit and unknown results. [Reconciled counts](docs/evaluation.md) distinguish
-blocked obligations from expected samples. Evaluation prepares the review; QA still
-makes the final decision explicitly.
+This POC does not control equipment, connect to live DMS/LIMS, authenticate human
+roles, or certify compliance. SQLite provides local persistence, not tamper-proof
+audit storage. Requirements extraction currently consumes supplied structured source
+fixtures; arbitrary PDF/text extraction is not implemented. The full notification
+queue and expanded QA package workflow remain tracked in issue #6.

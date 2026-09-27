@@ -18,6 +18,9 @@ from cleanroom_os.contracts import (
 
 
 from cleanroom_os.planning import validate_plan
+from cleanroom_os.agent_contracts import AgentResponse, RequirementsDraft, source_gaps, validate_response
+from cleanroom_os.agents import OfflineRequirements
+from cleanroom_os.evaluation import evaluate_results
 
 
 class Snapshot(Contract):
@@ -25,6 +28,7 @@ class Snapshot(Contract):
 
     state: State = "context_pending"
     context: PlanningContext | None = None
+    requirements_assessment: AgentResponse[RequirementsDraft] | None = None
     plan: SamplingPlan | None = None
     results: list[LIMSResult] = Field(default_factory=list)
     package: QAReviewPackage | None = None
@@ -32,6 +36,13 @@ class Snapshot(Contract):
     last_package_revision: int = 0
     decision_ids: list[str] = Field(default_factory=list)
     resolution_required: bool = False
+
+
+class RequirementsService(Protocol):
+    """Extract cited requirements without changing authoritative source documents."""
+
+    def extract(self, context_json: str) -> str:
+        ...
 
 
 class ProposalService(Protocol):
@@ -121,6 +132,7 @@ class Controller:
     @staticmethod
     def _clear(s: Snapshot) -> None:
         """Invalidate all artifacts dependent on changed source inputs."""
+        s.requirements_assessment = None
         s.plan = None
         s.results = []
         s.package = None
@@ -129,18 +141,36 @@ class Controller:
         """Record human-supplied input changes and invalidate dependent approvals."""
         return self.load_context_from(lambda: payload, actor=actor, role=role, reason=reason)
 
-    def load_context_from(self, loader: Callable[[], str], *, actor: str, role: str, reason: str) -> Snapshot:
+    def load_context_from(self, loader: Callable[[], str], *, actor: str, role: str, reason: str,
+                          requirements_service: RequirementsService | None = None, attempts: int = 1) -> Snapshot:
         """Load source data inside the transaction so adapter errors are persisted."""
+        if attempts not in (1, 2):
+            raise WorkflowError('Attempts must be 1 or 2')
+        service = requirements_service or OfflineRequirements()
         def apply(s: Snapshot) -> None:
             """Validate input authority and record explicit human resolution intent."""
             if role not in {'manufacturing', 'qa'} or not reason.strip():
                 raise WorkflowError('Human role and resolution/change reason required')
             context = parse_contract(PlanningContext, loader())
+            assessment = parse_contract(AgentResponse[RequirementsDraft], service.extract(context.model_dump_json()))
+            expected = RequirementsDraft(sop=context.sop, recipe=context.recipe)
+            validate_response(assessment, source_gaps(expected))
+            if assessment.output != expected:
+                raise WorkflowError('Requirements Agent changed authoritative counts, thresholds or source evidence')
             self._clear(s)
+            s.requirements_assessment = assessment
             s.context = context
             s.state = 'validated'
             s.resolution_required = False
-        return self._action('load_context', actor, role, json.dumps({'reason': reason}), apply, invalidate_on_error=True)
+        for attempt in range(attempts):
+            try:
+                return self._action('load_context', actor, role,
+                                    json.dumps({'reason': reason, 'attempt': attempt + 1}),
+                                    apply, invalidate_on_error=True)
+            except WorkflowError:
+                if attempt + 1 == attempts:
+                    raise
+        raise AssertionError('Unreachable')
 
     @staticmethod
     def _validate_plan(s: Snapshot, plan: SamplingPlan) -> None:
@@ -238,6 +268,10 @@ class Controller:
             package = parse_contract(QAReviewPackage, service.review(s.plan.model_dump_json(), ResultBatch(results=s.results).model_dump_json()))
             if package.plan != s.plan or package.results != s.results or package.revision <= s.last_package_revision:
                 raise WorkflowError('Review package changed evidence or reused a revision')
+            evaluation = evaluate_results(s.plan, s.results)
+            if (sorted(package.findings, key=lambda f: f.finding_id) != evaluation.findings
+                    or package.counts != evaluation.counts or package.sources != evaluation.sources):
+                raise WorkflowError('Review service changed deterministic findings, counts or source evidence')
             s.package = package
             s.last_package_revision = package.revision
             s.state = 'review_ready'

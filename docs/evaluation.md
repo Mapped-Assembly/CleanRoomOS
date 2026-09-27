@@ -88,7 +88,7 @@ Follow the [controller demo](controller.md), using `propose --fixture-plan` for 
 hand-authored LIMS fixtures. `results --normal` yields six matches and no findings.
 Omit `--normal` for the five deliberate anomalies. Both paths stop at `review_ready`
 until a human supplies a QA decision. The existing independent QA gate rejects
-anomalies even if a different review service omits its findings.
+anomalies and package preparation rejects a review service that omits deterministic findings.
 
 Generated plans require LIMS records referencing their actual stable IDs and revision;
 the evaluator deliberately does not rewrite fixture IDs to fit a generated plan.
