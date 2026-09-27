@@ -17,7 +17,7 @@ from cleanroom_os.opencode import OpenCodeTransport
 def main() -> None:
     """Run exactly one explicit action against a persistent synthetic run."""
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('action', choices=['status','events','context','propose','allow','disallow','collect','results','review','qa-approve','qa-reject','qa-resolve'])
+    parser.add_argument('action', choices=['status','events','notifications','package','notify-qa','context','propose','allow','disallow','collect','results','review','qa-approve','qa-reject','qa-resolve'])
     parser.add_argument('--db', type=Path, required=True)
     parser.add_argument('--mode', choices=['offline', 'opencode'], default='offline')
     parser.add_argument('--model', help='Explicit provider/model; otherwise OPENCODE_MODEL')
@@ -30,6 +30,7 @@ def main() -> None:
     parser.add_argument('--role', choices=['manufacturing','qa'], default='manufacturing')
     parser.add_argument('--reason', default='Explicit synthetic demo action')
     parser.add_argument('--revision', type=int, help='Exact displayed plan revision for a human decision')
+    parser.add_argument('--package-id', help='Exact archived package ID to inspect')
     parser.add_argument('--package-revision', type=int, help='Exact displayed package revision for QA')
     args = parser.parse_args()
     controller = Controller(args.db)
@@ -44,7 +45,17 @@ def main() -> None:
         if args.action == 'events':
             print(json.dumps(controller.events(), indent=2))
             return
-        if args.action == 'context':
+        if args.action == 'notifications':
+            print(json.dumps([n.model_dump(mode='json') for n in controller.notifications()], indent=2))
+            return
+        if args.action == 'package':
+            if args.package_id is None or args.package_revision is None:
+                raise WorkflowError('Specify --package-id and --package-revision from the QA notification')
+            print(controller.package(args.package_id, args.package_revision).model_dump_json(indent=2))
+            return
+        if args.action == 'notify-qa':
+            controller.notify_qa()
+        elif args.action == 'context':
             controller.load_context_from(lambda: load_context(adapter,resolved=args.resolved).model_dump_json(), actor=args.actor,role=args.role,reason=args.reason,
                                          requirements_service=RequirementsAgent(transport) if transport else None,
                                          attempts=2 if transport else 1)

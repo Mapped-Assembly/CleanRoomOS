@@ -352,6 +352,12 @@ class QAReviewPackage(Contract):
     findings: list[QAFinding]
     counts: EvaluationCounts | None = None
     agent_explanation: Annotated[str, Field(max_length=20000)] | None = None
+    context: PlanningContext | None = None
+    prior_decisions: list[HumanPlanningDecision | HumanQADecision] = Field(default_factory=list)
+    collection_status: Literal["not_collected", "simulated"] = "not_collected"
+    completeness: Literal["incomplete", "complete"] = "incomplete"
+    summary: Text | None = None
+    required_actions: list[Text] = Field(default_factory=list)
     sources: Evidence
 
     @model_validator(mode="after")

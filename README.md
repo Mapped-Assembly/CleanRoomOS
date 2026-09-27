@@ -68,5 +68,11 @@ the configured provider rejects the request.
 This POC does not control equipment, connect to live DMS/LIMS, authenticate human
 roles, or certify compliance. SQLite provides local persistence, not tamper-proof
 audit storage. Requirements extraction currently consumes supplied structured source
-fixtures; arbitrary PDF/text extraction is not implemented. The full notification
-queue and expanded QA package workflow remain tracked in issue #6.
+fixtures; arbitrary PDF/text extraction is not implemented.
+
+## QA package and local inbox
+
+Full source context, plan sequence, deterministic findings and accepted human decision
+history are retained in immutable packages. Blocked/uncollected plans remain explicitly
+incomplete. A transactional [local QA inbox](docs/qa-review.md) tracks exact revisions,
+QA decisions and superseded evidence without external messaging.

@@ -28,7 +28,7 @@ Every model exposes `model_json_schema()` for structured-output adapters and `mo
 | PlanningContext | Cross-source consistency and known-room validation |
 | PlannedSample / SamplingPlan / PlanningConflict | Derived sequence, original obligations, and unresolved blockers |
 | LIMSResult | Ingested measurement and source identity, even if unmatched |
-| QAFinding / QAReviewPackage | Evidence-backed review inputs with optional reconciled counts for older package compatibility |
+| QAFinding / QAReviewPackage | Evidence-backed review with source context, counts, collection/completeness status, history and required actions |
 | ResultBatch / ResultEvaluation / EvaluationCounts | LIMS snapshot, exact-revision findings and separate sample/record counts |
 | HumanPlanningDecision / HumanQADecision | Revision-specific operational and final QA decisions |
 | WorkflowTransition | Requested state change with expected state and attribution |
@@ -43,6 +43,8 @@ Counts use positive strict integers. An unknown count or threshold must use `{ "
 Plans retain the original requirement list. Each scheduled sample cites its requirement and scheduling source. Missing sample counts require an explicit conflict; over-counts and identity changes fail. A blocked plan remains a valid *proposal*, not an executable or approved plan.
 
 LIMS ingestion deliberately permits sample/plan mismatches so the deterministic evaluator can report them. Review packages reject ambiguous duplicate record IDs but may hold distinct records concerning the same sample. QA decision role is restricted to `qa`; role strings do not authenticate a human.
+
+See [QA packages and the local inbox](qa-review.md) for versioned archival, notification status and decision invalidation. Package context/history/summary are attached by the controller, not accepted as authority from a drafting service.
 
 ## Validation and workflow boundaries
 

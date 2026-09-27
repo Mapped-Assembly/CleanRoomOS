@@ -106,7 +106,7 @@ with HTTP 403 stating its free tier is restricted to use within OpenCode. Theref
 successful three-role live-model acceptance remains unverified until an accessible
 provider/model is configured. Do not treat the passing offline tests as that acceptance.
 
-## Migration and remaining dependency
+## Migration and QA workflow
 
 The previous operation/risk/compliance prompts and revision 0.1 SOP/scenarios are
 archived under `docs/legacy`. They are not referenced by active configuration.
@@ -114,9 +114,10 @@ archived under `docs/legacy`. They are not referenced by active configuration.
 The active shared SOP is revision 0.2. Restart OpenCode after updating the config.
 Reload context through the controller to create a fresh validated run revision.
 
-Issue #6 remains open for the local notification queue and expanded QA package
-workflow. These adapters use the existing package and final-decision gates, and do
-not claim to implement that separate dependency.
+This branch includes the QA package and local notification implementation from PR #16
+(issue #6). The controller enriches accepted agent drafts with complete source context,
+prior human decisions and collection status, and owns transactional notification
+delivery. See [QA packages and the local inbox](qa-review.md). Merge #16 first.
 
 API references: [OpenCode server](https://opencode.ai/docs/server/),
 [agents](https://opencode.ai/docs/agents/), and

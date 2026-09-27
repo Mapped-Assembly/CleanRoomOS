@@ -9,7 +9,7 @@ from collections.abc import Iterator
 from pathlib import Path
 from typing import Callable, Literal, Protocol, TypeVar
 
-from pydantic import Field
+from pydantic import Field, model_validator
 
 from cleanroom_os.contracts import (
     Contract, HumanPlanningDecision, HumanQADecision, LIMSResult, PlanningContext,
@@ -21,6 +21,8 @@ from cleanroom_os.planning import validate_plan
 from cleanroom_os.agent_contracts import AgentResponse, RequirementsDraft, source_gaps, validate_response
 from cleanroom_os.agents import OfflineRequirements
 from cleanroom_os.evaluation import evaluate_results
+from cleanroom_os.qa import enrich_package
+from cleanroom_os.notifications import LocalQAQueue, QANotification
 
 
 class Snapshot(Contract):
@@ -36,6 +38,21 @@ class Snapshot(Contract):
     last_package_revision: int = 0
     decision_ids: list[str] = Field(default_factory=list)
     resolution_required: bool = False
+    collection_simulated: bool = False
+    review_origin: State | None = None
+    action_required: str | None = None
+
+    @model_validator(mode='before')
+    @classmethod
+    def migrate_legacy_collection(cls, data):
+        """Older controllers reached these states only after enforced collection."""
+        if isinstance(data, dict) and 'collection_simulated' not in data:
+            data = dict(data)
+            data['collection_simulated'] = data.get('state') in {
+                'collection_simulated', 'results_received', 'review_ready', 'qa_approved', 'qa_rejected'
+            } or (data.get('state') == 'blocked' and data.get('package') is not None)
+            if data.get('state') == 'review_ready': data['review_origin'] = 'results_received'
+        return data
 
 
 class RequirementsService(Protocol):
@@ -75,6 +92,7 @@ class Controller:
         """Initialize durable local storage without resetting an existing run."""
         self.database = database
         with self._connect() as db:
+            LocalQAQueue.initialize(db)
             db.execute('CREATE TABLE IF NOT EXISTS snapshot (id INTEGER PRIMARY KEY CHECK(id=1), payload TEXT NOT NULL)')
             db.execute('CREATE TABLE IF NOT EXISTS events (id INTEGER PRIMARY KEY, at TEXT NOT NULL, actor TEXT NOT NULL, role TEXT NOT NULL, action TEXT NOT NULL, status TEXT NOT NULL, details TEXT NOT NULL, snapshot TEXT NOT NULL)')
             db.execute('INSERT OR IGNORE INTO snapshot VALUES (1, ?)', (Snapshot().model_dump_json(),))
@@ -100,6 +118,40 @@ class Controller:
             db.row_factory = sqlite3.Row
             return [dict(row) for row in db.execute('SELECT * FROM events ORDER BY id')]
 
+    @staticmethod
+    def _sync_notifications(db: sqlite3.Connection, s: Snapshot) -> None:
+        status = {'qa_approved': 'approved', 'qa_rejected': 'rejected', 'blocked': 'resolution_requested'}.get(s.state, 'awaiting_qa')
+        LocalQAQueue.synchronize(db, s.package, status)
+
+    def notifications(self) -> list[QANotification]:
+        """Read the durable local QA inbox, including superseded history."""
+        with self._connect() as db:
+            return LocalQAQueue.list(db)
+
+    def package(self, package_id: str, revision: int) -> QAReviewPackage:
+        """Resolve a notification target to the exact immutable package revision."""
+        with self._connect() as db:
+            row = db.execute('SELECT payload FROM qa_packages WHERE package_id=? AND revision=?', (package_id, revision)).fetchone()
+        if row is None:
+            raise WorkflowError('Unknown archived package revision')
+        return parse_contract(QAReviewPackage, row[0])
+
+    def notify_qa(self) -> Snapshot:
+        """Retry local notification delivery without changing the package or its status."""
+        def apply(s: Snapshot) -> None:
+            if s.package is None:
+                raise WorkflowError('Prepare a review package before notifying QA')
+        return self._action('notify_qa', 'controller', 'controller', 'Idempotent local QA notification', apply)
+
+    def _prior_decisions(self) -> list[HumanPlanningDecision | HumanQADecision]:
+        """Read accepted human records only; failed/stale attempts are not decisions."""
+        decisions = []
+        for event in self.events():
+            if event['status'] == 'ok' and event['action'] in {'decide_plan', 'decide_qa'}:
+                model = HumanPlanningDecision if event['action'] == 'decide_plan' else HumanQADecision
+                decisions.append(parse_contract(model, event['details']))
+        return decisions
+
     def _action(self, action: str, actor: str, role: str, details: str,
                 operation: Callable[[Snapshot], None], *, invalidate_on_error: bool = False) -> Snapshot:
         """Atomically gate, persist, and log an action; raise only after error commit."""
@@ -108,20 +160,25 @@ class Controller:
             db.execute('BEGIN IMMEDIATE')
             original = parse_contract(Snapshot, db.execute('SELECT payload FROM snapshot WHERE id=1').fetchone()[0])
             current = original.model_copy(deep=True)
+            db.execute('SAVEPOINT proposed_action')
             try:
                 if not actor.strip():
                     raise WorkflowError('Actor identity is required (demo identity is unauthenticated)')
                 operation(current)
                 current = parse_contract(Snapshot, current.model_dump_json())
+                self._sync_notifications(db, current)
             except Exception as exc:
                 error = exc
+                db.execute('ROLLBACK TO proposed_action')
                 current = original
                 if invalidate_on_error:
                     self._clear(current)
                     current.context = None
                     current.state = 'context_pending'
                     current.resolution_required = True
+                    self._sync_notifications(db, current)
                 details = json.dumps({'request': details, 'error_type': type(exc).__name__, 'error': str(exc)})
+            db.execute('RELEASE proposed_action')
             db.execute('UPDATE snapshot SET payload=? WHERE id=1', (current.model_dump_json(),))
             db.execute('INSERT INTO events(at,actor,role,action,status,details,snapshot) VALUES (?,?,?,?,?,?,?)',
                        (datetime.now(timezone.utc).isoformat(), actor, role, action, 'error' if error else 'ok', details, current.model_dump_json()))
@@ -133,6 +190,9 @@ class Controller:
     def _clear(s: Snapshot) -> None:
         """Invalidate all artifacts dependent on changed source inputs."""
         s.requirements_assessment = None
+        s.collection_simulated = False
+        s.review_origin = None
+        s.action_required = None
         s.plan = None
         s.results = []
         s.package = None
@@ -212,17 +272,22 @@ class Controller:
         def apply(s: Snapshot) -> None:
             """Check current proposal and reject repeated or stale decisions."""
             d = parse_contract(HumanPlanningDecision, payload)
-            if s.plan is None or s.state not in {'plan_proposed', 'blocked'}:
+            origin = s.review_origin if s.state == 'review_ready' else s.state
+            if (s.plan is None or origin not in {'plan_proposed', 'blocked'} or s.collection_simulated
+                    or (s.state == 'blocked' and s.package is not None)):
                 raise WorkflowError('No plan awaiting decision')
             if (d.plan_id, d.plan_revision) != (s.plan.plan_id, s.plan.revision) or d.decision_id in s.decision_ids:
                 raise WorkflowError('Stale or repeated decision')
             if d.decision == 'allow':
-                if s.state == 'blocked' or s.resolution_required:
+                if origin == 'blocked' or s.resolution_required:
                     raise WorkflowError('Allow cannot waive unmet obligations')
                 s.state = 'plan_approved'
             else:
                 s.state = 'blocked'
                 s.resolution_required = True
+            s.package = None
+            s.review_origin = None
+            s.action_required = None if d.decision == 'allow' else 'Manufacturing must supply corrected source inputs before reproposing.'
             s.decision_ids.append(d.decision_id)
         actor, role = self._identity(payload)
         return self._action('decide_plan', actor, role, payload, apply)
@@ -240,8 +305,13 @@ class Controller:
         """Record explicitly simulated collection, separately from approval."""
         def apply(s: Snapshot) -> None:
             """Require operational role and approval before simulated collection."""
-            if role != 'manufacturing' or s.state != 'plan_approved':
+            origin = s.review_origin if s.state == 'review_ready' else s.state
+            if role != 'manufacturing' or origin != 'plan_approved':
                 raise WorkflowError('Manufacturing and approved plan required')
+            s.collection_simulated = True
+            s.package = None
+            s.review_origin = None
+            s.action_required = None
             s.state = 'collection_simulated'
         return self._action('collect_simulated', actor, role, 'Synthetic collection only', apply)
 
@@ -249,13 +319,16 @@ class Controller:
         """Record validated LIMS ingestion without automatically passing results."""
         def apply(s: Snapshot) -> None:
             """Gate ingestion on simulated collection and preserve all anomalies."""
-            if s.state not in {'collection_simulated', 'results_received', 'review_ready', 'qa_approved', 'qa_rejected'}:
+            if not s.collection_simulated or s.state not in {'collection_simulated', 'results_received', 'review_ready', 'qa_approved', 'qa_rejected', 'blocked'}:
                 raise WorkflowError('Simulated collection required before results')
             data = parse_contract(ResultBatch, payload)
             if len({r.result_id for r in data.results}) != len(data.results):
                 raise WorkflowError('Duplicate result record IDs')
             s.results = data.results
             s.package = None
+            s.review_origin = None
+            s.action_required = None
+            s.resolution_required = False
             s.state = 'results_received'
         return self._action('receive_results', 'controller', 'controller', payload, apply)
 
@@ -263,8 +336,10 @@ class Controller:
         """Accept a review proposal only for the exact plan and result snapshot."""
         def apply(s: Snapshot) -> None:
             """Reject fabricated evidence or stale package revisions."""
-            if s.state != 'results_received' or s.plan is None:
-                raise WorkflowError('Results and plan required')
+            if s.state not in {'plan_proposed', 'plan_approved', 'blocked', 'collection_simulated', 'results_received'} or s.plan is None or s.context is None:
+                raise WorkflowError('A current plan and context are required for review')
+            if s.state == 'blocked' and s.package is not None:
+                raise WorkflowError('Correct the source inputs or results before preparing another package')
             package = parse_contract(QAReviewPackage, service.review(s.plan.model_dump_json(), ResultBatch(results=s.results).model_dump_json()))
             if package.plan != s.plan or package.results != s.results or package.revision <= s.last_package_revision:
                 raise WorkflowError('Review package changed evidence or reused a revision')
@@ -272,6 +347,10 @@ class Controller:
             if (sorted(package.findings, key=lambda f: f.finding_id) != evaluation.findings
                     or package.counts != evaluation.counts or package.sources != evaluation.sources):
                 raise WorkflowError('Review service changed deterministic findings, counts or source evidence')
+            package = enrich_package(package, s.context, collected=s.collection_simulated,
+                                     prior_decisions=self._prior_decisions())
+            s.review_origin = s.state
+            s.action_required = ' '.join(package.required_actions) if package.completeness == 'incomplete' else 'QA: review the exact package and record a decision.'
             s.package = package
             s.last_package_revision = package.revision
             s.state = 'review_ready'
@@ -290,11 +369,14 @@ class Controller:
             if d.decision == 'approve':
                 self._complete(s)
                 s.state = 'qa_approved'
+                s.action_required = 'QA approval recorded; any evidence change requires a new review.'
             elif d.decision == 'reject':
                 s.state = 'qa_rejected'
+                s.action_required = f'QA rejected: {d.rationale}. Correct source inputs or LIMS evidence and prepare a new package.'
             else:
                 s.state = 'blocked'
                 s.resolution_required = True
+                s.action_required = f'QA requested resolution: {d.rationale}. Manufacturing must update source inputs or results before a new review.'
             s.decision_ids.append(d.decision_id)
         actor, role = self._identity(payload)
         return self._action('decide_qa', actor, role, payload, apply)
@@ -303,6 +385,8 @@ class Controller:
     def _complete(s: Snapshot) -> None:
         """Conservatively reject incomplete, mismatched or failing evidence."""
         assert s.plan is not None and s.package is not None
+        if not s.collection_simulated or s.package.completeness != 'complete':
+            raise WorkflowError('Incomplete or uncollected evidence cannot be approved')
         if s.plan.conflicts or s.package.findings or len(s.results) != len(s.plan.samples):
             raise WorkflowError('Unresolved findings, conflicts, or missing results')
         by_sample = {r.sample_id: r for r in s.results}
