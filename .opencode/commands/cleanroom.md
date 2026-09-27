@@ -1,6 +1,6 @@
 ---
-description: Start or continue the cleanroom AI-human simulation
-agent: cleanroom
+description: Explain the Python-controlled sampling POC entry point
+agent: cleanroom-help
 ---
-Start or continue the cleanroom simulation using this context: $ARGUMENTS
-Delegate operations, risk review, and tracking/trending to their respective subagents. If context is missing, ask for the scenario and the user's manufacturing or QA role. Keep all outcomes explicitly simulated.
+Explain the migration to `python -m cleanroom_os.workflow` and docs/agents.md.
+This slash command does not delegate, execute or authorize any workflow. Context: $ARGUMENTS

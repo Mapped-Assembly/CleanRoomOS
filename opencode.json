@@ -1,55 +1,44 @@
 {
   "$schema": "https://opencode.ai/config.json",
-  "default_agent": "cleanroom",
+  "default_agent": "cleanroom-help",
+  "permission": {
+    "*": "deny"
+  },
   "agent": {
-    "cleanroom": {
-      "description": "Coordinate the cleanroom AI-human simulation",
+    "cleanroom-help": {
+      "description": "Show the Python controller entry point",
       "mode": "primary",
-      "prompt": "{file:./prompts/coordinator.md}",
+      "prompt": "{file:./prompts/help.md}",
+      "steps": 1,
       "permission": {
-        "*": "deny",
-        "read": "allow",
-        "glob": "allow",
-        "grep": "allow",
-        "task": {
-          "*": "deny",
-          "cleanroom-operation": "allow",
-          "cleanroom-risk": "allow",
-          "cleanroom-compliance": "allow"
-        }
+        "*": "deny"
       }
     },
-    "cleanroom-operation": {
-      "description": "Generate cleanroom operation tasks",
+    "cleanroom-requirements": {
+      "description": "Extract cited SOP/recipe requirements and explicit gaps",
       "mode": "subagent",
-      "prompt": "{file:./prompts/operation.md}",
+      "prompt": "{file:./prompts/requirements.md}",
+      "steps": 1,
       "permission": {
-        "*": "deny",
-        "read": "allow",
-        "glob": "allow",
-        "grep": "allow"
+        "*": "deny"
       }
     },
-    "cleanroom-risk": {
-      "description": "Assess task risk and attempt de-risking",
+    "cleanroom-planning": {
+      "description": "Propose a sampling schedule without changing requirements",
       "mode": "subagent",
-      "prompt": "{file:./prompts/risk.md}",
+      "prompt": "{file:./prompts/planning.md}",
+      "steps": 1,
       "permission": {
-        "*": "deny",
-        "read": "allow",
-        "glob": "allow",
-        "grep": "allow"
+        "*": "deny"
       }
     },
-    "cleanroom-compliance": {
-      "description": "Produce the Tracking and trending report",
+    "cleanroom-results-review": {
+      "description": "Explain deterministic findings for human QA review",
       "mode": "subagent",
-      "prompt": "{file:./prompts/compliance.md}",
+      "prompt": "{file:./prompts/results-review.md}",
+      "steps": 1,
       "permission": {
-        "*": "deny",
-        "read": "allow",
-        "glob": "allow",
-        "grep": "allow"
+        "*": "deny"
       }
     }
   },
