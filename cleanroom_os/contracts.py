@@ -15,7 +15,7 @@ Count = Annotated[int, Field(strict=True, gt=0)]
 Number = Annotated[float, Field(strict=True, allow_inf_nan=False)]
 SourceKind = Literal["sop", "recipe", "schedule", "lims", "human"]
 Role = Literal["manufacturing", "qa"]
-State = Literal["context_pending", "validated", "plan_proposed", "blocked", "plan_approved", "results_received", "review_ready", "qa_approved", "qa_rejected"]
+State = Literal["context_pending", "validated", "plan_proposed", "blocked", "plan_approved", "collection_simulated", "results_received", "review_ready", "qa_approved", "qa_rejected"]
 Unit = Literal["CFU", "CFU/m3", "CFU/plate", "CFU/cm2", "particles/m3"]
 
 

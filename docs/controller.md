@@ -1,0 +1,42 @@
+# Deterministic local workflow controller
+
+`cleanroom_os.controller.Controller` owns a single synthetic run per SQLite database. Calls read the latest snapshot inside `BEGIN IMMEDIATE`; the snapshot and event are committed together. Failed actions are recorded with their type/message and original state, then raised as `WorkflowError`. Loading invalid replacement context instead invalidates downstream approval and returns to `context_pending`. Callers must surface these exceptions.
+
+| Action | Required state | Result |
+|---|---|---|
+| Human context load/update | Any | validated; plan/results/package invalidated |
+| Planner proposal | validated or unresolved proposal, no pending human resolution | plan_proposed or blocked |
+| Human allow | plan_proposed, exact revision | plan_approved |
+| Human disallow/request resolution | proposed or blocked plan, exact revision | blocked |
+| Simulated collection | plan_approved, manufacturing role | collection_simulated |
+| LIMS import | collection_simulated or later result/review state | results_received; package/QA approval invalidated |
+| Review proposal | results_received | review_ready |
+| QA decision | review_ready, exact package and plan revisions | qa_approved, qa_rejected, or blocked |
+
+Blocked obligations remain on the plan. Allow cannot waive a conflict or unknown requirement. Human context updates must include attribution and reason; subsequent proposals use strictly increasing plan revisions. Historical source snapshots, decisions, and failed operations remain in `events`. Package revisions also increase, and decision IDs cannot repeat. Restarting `Controller` with the same path resumes the run. It does not replay or manufacture human decisions.
+
+`ProposalService` and `ReviewService` receive serialized input and return JSON; they do not receive controller handles. The planner has at most two attempts; review has one. `FixturePlanner` uses the existing hand-authored fixture oracle for versions 1/2; it is not the general planner in issue #4. `FixtureReviewer` wraps evidence without finding classification; the independent final gate rejects missing, duplicate, mismatched, out-of-limit, or unknown evidence even if a service reports no findings. Rich evaluation/package content is still work for #5/#6. The conservative POC gate does not allow findings to be waived.
+
+## Offline interaction
+
+Run from the repository root after `python -m pip install -e .`. All roles below are **self-reported and unauthenticated**. These commands simulate a sequence; each decision command is a separate explicit human action.
+
+```bash
+python -m cleanroom_os.workflow context --db /tmp/cleanroom-demo.sqlite
+python -m cleanroom_os.workflow propose --db /tmp/cleanroom-demo.sqlite
+# B is blocked; allow at revision 1 is rejected.
+python -m cleanroom_os.workflow context --db /tmp/cleanroom-demo.sqlite --resolved --reason 'Manufacturing supplied the fixture schedule update'
+python -m cleanroom_os.workflow propose --db /tmp/cleanroom-demo.sqlite
+python -m cleanroom_os.workflow allow --db /tmp/cleanroom-demo.sqlite --revision 2
+python -m cleanroom_os.workflow collect --db /tmp/cleanroom-demo.sqlite
+python -m cleanroom_os.workflow results --db /tmp/cleanroom-demo.sqlite --normal
+python -m cleanroom_os.workflow review --db /tmp/cleanroom-demo.sqlite
+python -m cleanroom_os.workflow qa-approve --db /tmp/cleanroom-demo.sqlite --role qa --revision 2 --package-revision 1 --reason 'Reviewed the synthetic complete result set'
+python -m cleanroom_os.workflow events --db /tmp/cleanroom-demo.sqlite
+```
+
+Use a fresh database path for each demo run; existing runs are never reset implicitly. Omit `--normal` to load the anomalous data, which the final approval gate rejects. `status` is read-only. Context adapter/file errors and controller validation/service errors enter the ledger. CLI LIMS file errors are displayed before ingestion.
+
+## Boundaries
+
+This implements a local POC control boundary, not authentication or tamper-proof audit storage. A caller with Python/SQLite access is trusted; do not expose decision methods as tools to untrusted model code. Human identity/role is checked structurally only. Sources and exact evidence are retained, but authenticity of upstream documents is outside this local adapter. Window/occupancy/sequence checks are enforced; full travel/setup/resource feasibility belongs to the planner validator in #4. No notifications, live systems or equipment are invoked. The old OpenCode conversation-only demo remains separate; it cannot advance this database. The model adapters/configuration migration is issue #7.
