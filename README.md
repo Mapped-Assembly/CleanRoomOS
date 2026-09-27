@@ -84,3 +84,11 @@ retaining LIMS evidence and identifying missing, unmatched, duplicate, mismatche
 out-of-limit and unknown results. [Reconciled counts](docs/evaluation.md) distinguish
 blocked obligations from expected samples. Evaluation prepares the review; QA still
 makes the final decision explicitly.
+
+## QA package and local inbox
+
+Review packages now retain full source context, plan sequence, counts, findings and
+prior accepted human decisions. Blocked/uncollected plans can be reviewed as incomplete;
+QA approval cannot erase their obligations. A transactional [local QA inbox](docs/qa-review.md)
+points to immutable package revisions and tracks approval, rejection, resolution and
+superseded evidence. No external messaging is used.
