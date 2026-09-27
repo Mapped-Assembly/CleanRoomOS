@@ -8,8 +8,8 @@ from typing import Generic, Literal, Protocol, TypeVar
 from pydantic import AwareDatetime, Field
 
 from cleanroom_os.contracts import (
-    Contract, Count, DailySchedule, Evidence, Identifier, LIMSResult,
-    PlanningContext, Recipe, Room, SOPRequirements, SourceReference, Text, TimeWindow,
+    Contract, DailySchedule, Evidence, Identifier, LIMSResult, ExecutionAssumptions,
+    PlanningContext, Recipe, Room, SOPRequirements, SourceReference, Text,
     parse_contract,
 )
 
@@ -23,26 +23,13 @@ class Fixture(Contract, Generic[T]):
     data: T
 
 
-class ExecutionAssumptions(Contract):
-    """Explicit scenario timing and resource inputs, not planner defaults."""
-
-    technician_id: Identifier
-    technician_availability: TimeWindow
-    starting_room_id: Identifier
-    sample_minutes: Count
-    setup_minutes_per_room: Count
-    travel_minutes_between_rooms: Count
-    collection_mode: Literal["sequential"]
-    sources: Evidence
-
-
 class Facility(Contract):
     """One mock facility and its explicit execution assumptions."""
 
     facility_id: Identifier
     name: Text
     rooms: list[Room] = Field(min_length=1)
-    execution: ExecutionAssumptions
+    execution: ExecutionAssumptions | None = None
 
 
 class HumanScheduleUpdate(Contract):
@@ -143,6 +130,7 @@ class FileInputAdapter:
 
 def load_context(adapter: InputAdapter, *, resolved: bool = False) -> PlanningContext:
     """Assemble validated planning inputs from any conforming adapter."""
+    facility = adapter.load_facility()
     return PlanningContext(sop=adapter.load_sop(), recipe=adapter.load_recipe(),
-                           rooms=adapter.load_facility().rooms,
+                           rooms=facility.rooms, execution=facility.execution,
                            schedule=adapter.load_schedule(resolved=resolved))

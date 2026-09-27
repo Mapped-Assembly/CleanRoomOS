@@ -15,7 +15,7 @@
 
 Blocked obligations remain on the plan. Allow cannot waive a conflict or unknown requirement. Human context updates must include attribution and reason; subsequent proposals use strictly increasing plan revisions. Historical source snapshots, decisions, and failed operations remain in `events`. Package revisions also increase, and decision IDs cannot repeat. Restarting `Controller` with the same path resumes the run. It does not replay or manufacture human decisions.
 
-`ProposalService` and `ReviewService` receive serialized input and return JSON; they do not receive controller handles. The planner has at most two attempts; review has one. `FixturePlanner` uses the existing hand-authored fixture oracle for versions 1/2; it is not the general planner in issue #4. `FixtureReviewer` wraps evidence without finding classification; the independent final gate rejects missing, duplicate, mismatched, out-of-limit, or unknown evidence even if a service reports no findings. Rich evaluation/package content is still work for #5/#6. The conservative POC gate does not allow findings to be waived.
+`ProposalService` and `ReviewService` receive serialized input and return JSON; they do not receive controller handles. The planner has at most two attempts; review has one. `DeterministicPlanner` generates proposals from current inputs by default. `FixturePlanner` remains an explicit oracle replay option for versions 1/2. See [the planning policy and independent validator](planning.md). `FixtureReviewer` wraps evidence without finding classification; the independent final gate rejects missing, duplicate, mismatched, out-of-limit, or unknown evidence even if a service reports no findings. Rich evaluation/package content is still work for #5/#6. The conservative POC gate does not allow findings to be waived.
 
 ## Offline interaction
 
@@ -23,10 +23,10 @@ Run from the repository root after `python -m pip install -e .`. All roles below
 
 ```bash
 python -m cleanroom_os.workflow context --db /tmp/cleanroom-demo.sqlite
-python -m cleanroom_os.workflow propose --db /tmp/cleanroom-demo.sqlite
+python -m cleanroom_os.workflow propose --fixture-plan --db /tmp/cleanroom-demo.sqlite
 # B is blocked; allow at revision 1 is rejected.
 python -m cleanroom_os.workflow context --db /tmp/cleanroom-demo.sqlite --resolved --reason 'Manufacturing supplied the fixture schedule update'
-python -m cleanroom_os.workflow propose --db /tmp/cleanroom-demo.sqlite
+python -m cleanroom_os.workflow propose --fixture-plan --db /tmp/cleanroom-demo.sqlite
 python -m cleanroom_os.workflow allow --db /tmp/cleanroom-demo.sqlite --revision 2
 python -m cleanroom_os.workflow collect --db /tmp/cleanroom-demo.sqlite
 python -m cleanroom_os.workflow results --db /tmp/cleanroom-demo.sqlite --normal
@@ -39,4 +39,4 @@ Use a fresh database path for each demo run; existing runs are never reset impli
 
 ## Boundaries
 
-This implements a local POC control boundary, not authentication or tamper-proof audit storage. A caller with Python/SQLite access is trusted; do not expose decision methods as tools to untrusted model code. Human identity/role is checked structurally only. Sources and exact evidence are retained, but authenticity of upstream documents is outside this local adapter. Window/occupancy/sequence checks are enforced; full travel/setup/resource feasibility belongs to the planner validator in #4. No notifications, live systems or equipment are invoked. The old OpenCode conversation-only demo remains separate; it cannot advance this database. The model adapters/configuration migration is issue #7.
+This implements a local POC control boundary, not authentication or tamper-proof audit storage. A caller with Python/SQLite access is trusted; do not expose decision methods as tools to untrusted model code. Human identity/role is checked structurally only. Sources and exact evidence are retained, but authenticity of upstream documents is outside this local adapter. The shared independent validator enforces availability, occupancy, sequence, duration, setup, travel and technician/shift bounds. No notifications, live systems or equipment are invoked. The old OpenCode conversation-only demo remains separate; it cannot advance this database. The model adapters/configuration migration is issue #7.

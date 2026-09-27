@@ -68,3 +68,11 @@ These commands validate and summarize inputs; they do not approve or execute a p
 ## Deterministic workflow controller
 
 The Python controller now persists revision-specific decisions and workflow state in SQLite, with independent validation gates and an offline, stepwise CLI. See [controller states, demo commands, and boundaries](docs/controller.md). The existing OpenCode conversation does not control this persistent workflow.
+
+## Deterministic sampling planner
+
+The workflow CLI now generates plans from validated SOP, recipe, schedule and explicit
+execution constraints. Blocked obligations remain visible; an independent validator
+checks every proposal before the controller accepts it. See [planning policy, conflicts,
+and revision handling](docs/planning.md). Use `propose --fixture-plan` only to replay
+the original hand-authored plan/LIMS demonstration.
