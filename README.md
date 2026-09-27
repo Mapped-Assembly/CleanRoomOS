@@ -41,3 +41,15 @@ All four agents deny operational tools. Only the coordinator can invoke the thre
 [CR-SOP-001: Cleanroom Operations, Task Review, and Exception Handling](docs/cleanroom-sop.md) is the shared simulation SOP. `opencode.json` loads the complete file through project-level `instructions`, so the coordinator and all three subagents receive it, including direct subagent invocations. Each role prompt also requires reading the SOP if it is missing from context and pausing if it cannot be obtained. Keep the SOP in this one file when revising it.
 
 After pulling this update, restart OpenCode to reload the project configuration. Facility-specific placeholders remain unapproved until manufacturing and QA complete them.
+
+## Python contracts
+
+The sampling POC now has typed JSON exchange contracts in `cleanroom_os.contracts`.
+See [contract usage, authority rules, and validation boundaries](docs/contracts.md).
+
+```bash
+python -m pip install -e .
+python -m unittest discover -s tests -v
+```
+
+This contract layer is independent of the existing OpenCode conversation simulation.
