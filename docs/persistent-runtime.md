@@ -72,8 +72,15 @@ The initial typed record boundary supports:
 - operator interventions
 - maintenance state/events
 - calibration state/events
+- contamination observations and evidence
 
-Issue #23 expands the minimal action/risk records into full provenance and cleanroom policy enforcement. Issue #21 later uses the `instance_id` boundary for strict multi-instance configuration and isolation.
+The [audited action lifecycle](action-audit.md) from #23 adds versioned policy,
+pre-execution contamination/service checks, incidents, and operator interventions.
+Use its `/actions` endpoints for new action lifecycle entries; generic `/records`
+writes for actions, risk decisions, incidents, and interventions are now rejected.
+Maintenance, calibration, contamination, and SOP-reference writes require the
+operator credential documented there. Existing generic records remain readable.
+Issue #21 later expands multi-instance configuration and isolation.
 
 ## Tests
 

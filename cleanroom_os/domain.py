@@ -4,7 +4,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Annotated, Literal, TypeAlias
 
-from pydantic import BaseModel, ConfigDict, Field, JsonValue, StringConstraints
+from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, JsonValue, StringConstraints
 
 Identifier = Annotated[str, StringConstraints(pattern=r"^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$")]
 Text = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
@@ -18,6 +18,7 @@ RecordKind = Literal[
     "operator_intervention",
     "maintenance",
     "calibration",
+    "contamination",
 ]
 
 
@@ -107,6 +108,8 @@ class MaintenancePayload(DomainModel):
     equipment_id: Identifier
     status: Literal["current", "due", "overdue", "out_of_service"]
     performed_at: datetime | None = None
+    due_at: AwareDatetime | None = None
+    faults: list[Text] = Field(default_factory=list)
     notes: Text | None = None
 
 
@@ -117,6 +120,25 @@ class CalibrationPayload(DomainModel):
     status: Literal["valid", "due", "expired", "unknown"]
     calibrated_at: datetime | None = None
     due_at: datetime | None = None
+
+
+class ActionEvidence(DomainModel):
+    """A timestamped reference to supplied evidence; no remote content is fetched."""
+
+    source: Text
+    reference: Text
+    captured_at: AwareDatetime
+    details: dict[str, JsonValue] = Field(default_factory=dict)
+
+
+class ContaminationPayload(DomainModel):
+    """An operator/adapter-supplied observation for one cleanroom zone."""
+
+    zone_id: Identifier
+    status: Literal["clean", "suspected", "contaminated", "unknown"]
+    observed_at: AwareDatetime
+    expires_at: AwareDatetime
+    evidence: list[ActionEvidence] = Field(min_length=1)
 
 
 class _RecordCreateBase(DomainModel):
@@ -188,6 +210,13 @@ class CalibrationRecordCreate(_RecordCreateBase):
     payload: CalibrationPayload
 
 
+class ContaminationRecordCreate(_RecordCreateBase):
+    """Append a contamination observation to the instance history."""
+
+    kind: Literal["contamination"] = "contamination"
+    payload: ContaminationPayload
+
+
 OperationalRecordCreate: TypeAlias = Annotated[
     AgentRecordCreate
     | TaskRecordCreate
@@ -197,7 +226,8 @@ OperationalRecordCreate: TypeAlias = Annotated[
     | IncidentRecordCreate
     | OperatorInterventionRecordCreate
     | MaintenanceRecordCreate
-    | CalibrationRecordCreate,
+    | CalibrationRecordCreate
+    | ContaminationRecordCreate,
     Field(discriminator="kind"),
 ]
 
