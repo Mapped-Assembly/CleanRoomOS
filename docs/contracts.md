@@ -1,6 +1,6 @@
 # Structured sampling contracts
 
-Issue #1 introduces `cleanroom_os.contracts`, a Python 3.11+ Pydantic v2 exchange layer. Install with `python -m pip install -e .`; run `python -m unittest discover -s tests -v`.
+Issue #1 introduces `cleanroom_os.contracts`, a Python 3.11+ Pydantic v2 exchange layer. Install the test dependencies with `python -m pip install -e ".[test]"`; run `python -m unittest discover -s tests -v`.
 
 ## Exchange boundary
 

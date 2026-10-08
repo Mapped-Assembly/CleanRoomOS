@@ -116,6 +116,7 @@ file editing or delegation. Its decision tool requests human confirmation.
 ## Tests and live acceptance
 
 ```powershell
+.\.venv\Scripts\python.exe -m pip install -e ".[test]"
 .\.venv\Scripts\python.exe -m unittest discover -s tests -v
 # Requires the server above and a genuinely accessible configured provider/model:
 $env:CLEANROOM_LIVE_OPENCODE = "1"

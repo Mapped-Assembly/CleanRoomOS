@@ -109,6 +109,7 @@ subagent calls cannot change the SQLite workflow.
 - [Scenarios](docs/scenarios.md): current offline and agent acceptance cases
 
 ```bash
+python -m pip install -e ".[test]"
 python -m unittest discover -s tests -v
 ```
 

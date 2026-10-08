@@ -6,8 +6,21 @@ build-backend = "setuptools.build_meta"
 name = "cleanroom-os"
 version = "0.1.0"
 requires-python = ">=3.11"
-dependencies = ["pydantic>=2.13,<3"]
-description = "Local cleanroom sampling workflows, validation, and human QA evidence for CleanRoomOS"
+dependencies = [
+    "pydantic>=2.13,<3",
+    "fastapi>=0.115,<1",
+    "sqlalchemy>=2.0,<3",
+    "psycopg[binary]>=3.2,<4",
+    "uvicorn[standard]>=0.30,<1",
+]
+description = "Local cleanroom sampling workflows, persistent runtime, validation, and human QA evidence for CleanRoomOS"
+
+[project.optional-dependencies]
+# Use the test-client dependencies for the Starlette version selected by FastAPI.
+test = ["starlette[full]"]
+
+[project.scripts]
+cleanroom-server = "cleanroom_os.server:main"
 
 [project.urls]
 Repository = "https://github.com/Mapped-Assembly/CleanRoomOS"
