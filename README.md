@@ -1,24 +1,31 @@
 # CleanRoomOS
 
+CleanRoomOS is a [Mapped Assembly](https://github.com/Mapped-Assembly) proof of
+concept for local cleanroom sampling workflows: preserve SOP/recipe obligations,
+plan around room constraints, match simulated LIMS results, and prepare evidence
+for a separate human QA decision.
+
+## Interactive demo
+
+Install Git, Python 3.11+, and OpenCode connected to a model you can access.
+On Windows, the Python launcher (`py -3`) must be available; Linux/macOS use
+`python3`. From a terminal:
+
 ```powershell
-git clone https://github.com/isayahc/CleanRoomOS.git
+git clone https://github.com/Mapped-Assembly/CleanRoomOS.git
 cd CleanRoomOS
 opencode --agent cleanroom
 ```
 
-Requires OpenCode already connected to your model and Python 3.11+. Then type:
-**“Plan today’s sampling.”** The assistant sets up the local Python dependencies on
-first use and walks you through room conflicts, manufacturing approval, simulated
+Then type **“Plan today’s sampling.”** The assistant creates a local `.venv` and
+installs the Python dependencies on first use (package-download access is needed),
+then walks you through room conflicts, manufacturing approval, simulated
 collection, lab results, and human QA review. No separate server, password, or model
 environment variable is needed. Your existing OpenCode model selection is used.
 
 The interactive demo uses the bundled synthetic fixture plan/results through the
 validated Python controller. State persists in `cleanroom-interactive.sqlite`.
 Manufacturing and QA decisions require your explicit confirmation.
-
-A local cleanroom sampling POC: preserve SOP/recipe obligations, plan sampling around
-actual room constraints, match simulated LIMS results, and prepare evidence for a
-separate human QA decision.
 
 The Python controller owns persisted state and validation. Three optional OpenCode
 agents return bounded, cited proposals; they cannot execute tasks or approve work.
@@ -33,10 +40,27 @@ agents return bounded, cited proposals; they cannot execute tasks or approve wor
 
 ## Developer CLI: offline
 
-No model or credentials are required. Python 3.11+ is required.
+No model or credentials are required. From the cloned repository, install the
+Python package in a virtual environment. Linux/macOS or WSL2:
 
 ```bash
+python3 -m venv .venv
+source .venv/bin/activate
 python -m pip install -e .
+```
+
+Windows PowerShell, without activating the environment:
+
+```powershell
+py -3 -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -e .
+```
+
+After installation, these commands run offline. In PowerShell, replace `python`
+with `.\.venv\Scripts\python.exe` if the environment is not activated. Run from
+the repository root so the bundled fixtures are available:
+
+```bash
 python -m cleanroom_os.workflow context --db cleanroom-demo.sqlite
 python -m cleanroom_os.workflow propose --db cleanroom-demo.sqlite
 python -m cleanroom_os.workflow status --db cleanroom-demo.sqlite
@@ -106,3 +130,16 @@ Full source context, plan sequence, deterministic findings and accepted human de
 history are retained in immutable packages. Blocked/uncollected plans remain explicitly
 incomplete. A transactional [local QA inbox](docs/qa-review.md) tracks exact revisions,
 QA decisions and superseded evidence without external messaging.
+
+## Repository location
+
+The canonical repository is
+[`Mapped-Assembly/CleanRoomOS`](https://github.com/Mapped-Assembly/CleanRoomOS).
+For an existing checkout, update its remote from inside that directory:
+
+```bash
+git remote set-url origin https://github.com/Mapped-Assembly/CleanRoomOS.git
+```
+
+The Python distribution `cleanroom-os`, import package `cleanroom_os`, OpenCode
+agent `cleanroom`, and local SQLite filenames are unchanged by the transfer.

@@ -13,7 +13,9 @@ sessions. The mode is explicit per action, and a live failure never switches mod
 
 ## Windows / PowerShell setup
 
-For a single-command live acceptance run with OpenCode already installed and authenticated:
+From a checkout of [Mapped-Assembly/CleanRoomOS](https://github.com/Mapped-Assembly/CleanRoomOS),
+with Python 3.11+ available through `py -3` and OpenCode already installed and
+authenticated, run:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\run-live-demo.ps1
@@ -39,7 +41,8 @@ Use a model listed by `opencode models` that your provider account actually perm
 No model is hardcoded in this repository. From the repository root:
 
 ```powershell
-python -m pip install -e .
+py -3 -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -e .
 opencode serve --hostname 127.0.0.1 --port 4096
 ```
 
@@ -48,9 +51,9 @@ In another PowerShell terminal in the same repository, set your selected model:
 ```powershell
 $env:OPENCODE_BASE_URL = "http://127.0.0.1:4096"
 $env:OPENCODE_MODEL = "provider/model-from-your-configured-account"
-python -m cleanroom_os.workflow context --db agent-demo.sqlite --mode opencode
-python -m cleanroom_os.workflow propose --db agent-demo.sqlite --mode opencode
-python -m cleanroom_os.workflow status --db agent-demo.sqlite
+.\.venv\Scripts\python.exe -m cleanroom_os.workflow context --db agent-demo.sqlite --mode opencode
+.\.venv\Scripts\python.exe -m cleanroom_os.workflow propose --db agent-demo.sqlite --mode opencode
+.\.venv\Scripts\python.exe -m cleanroom_os.workflow status --db agent-demo.sqlite
 ```
 
 Do not use the placeholder model literally. The base URL defaults to localhost:4096;
@@ -61,8 +64,8 @@ per attempt (default 120). Source payloads and schemas are sent to the selected 
 B remains blocked until manufacturing explicitly supplies the valid replacement:
 
 ```powershell
-python -m cleanroom_os.workflow context --db agent-demo.sqlite --mode opencode --resolved --reason "Manufacturing supplied the replacement schedule"
-python -m cleanroom_os.workflow propose --db agent-demo.sqlite --mode opencode
+.\.venv\Scripts\python.exe -m cleanroom_os.workflow context --db agent-demo.sqlite --mode opencode --resolved --reason "Manufacturing supplied the replacement schedule"
+.\.venv\Scripts\python.exe -m cleanroom_os.workflow propose --db agent-demo.sqlite --mode opencode
 ```
 
 Inspect the resulting plan revision before the human `allow` action. Collection,
@@ -113,11 +116,11 @@ file editing or delegation. Its decision tool requests human confirmation.
 ## Tests and live acceptance
 
 ```powershell
-python -m pip install -e ".[test]"
-python -m unittest discover -s tests -v
+.\.venv\Scripts\python.exe -m pip install -e ".[test]"
+.\.venv\Scripts\python.exe -m unittest discover -s tests -v
 # Requires the server above and a genuinely accessible configured provider/model:
 $env:CLEANROOM_LIVE_OPENCODE = "1"
-python -m unittest discover -s tests -p test_live_agents.py -v
+.\.venv\Scripts\python.exe -m unittest discover -s tests -p test_live_agents.py -v
 Remove-Item Env:CLEANROOM_LIVE_OPENCODE
 ```
 

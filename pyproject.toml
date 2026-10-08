@@ -13,7 +13,7 @@ dependencies = [
     "psycopg[binary]>=3.2,<4",
     "uvicorn[standard]>=0.30,<1",
 ]
-description = "Typed contracts and persistent runtime for CleanRoomOS"
+description = "Local cleanroom sampling workflows, persistent runtime, validation, and human QA evidence for CleanRoomOS"
 
 [project.optional-dependencies]
 # Use the test-client dependencies for the Starlette version selected by FastAPI.
@@ -21,6 +21,10 @@ test = ["starlette[full]"]
 
 [project.scripts]
 cleanroom-server = "cleanroom_os.server:main"
+
+[project.urls]
+Repository = "https://github.com/Mapped-Assembly/CleanRoomOS"
+Issues = "https://github.com/Mapped-Assembly/CleanRoomOS/issues"
 
 [tool.setuptools.packages.find]
 include = ["cleanroom_os*"]
