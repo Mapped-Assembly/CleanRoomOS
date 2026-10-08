@@ -84,8 +84,11 @@ The runtime tests use file-backed SQLite so persistence can be restarted within 
 - rejection of records for nonexistent instances
 - FastAPI create/query behavior
 
-Run the full existing suite plus runtime tests with:
+Install the test extra and run the full existing suite plus runtime tests. The extra
+includes Starlette's optional HTTP client dependencies required by FastAPI's
+`TestClient`; installing the runtime package alone does not include them.
 
 ```bash
+python -m pip install -e ".[test]"
 python -m unittest discover -s tests -v
 ```

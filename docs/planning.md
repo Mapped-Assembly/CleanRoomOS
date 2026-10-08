@@ -65,5 +65,6 @@ referencing their actual sample IDs and revision; mismatched fixture results can
 Run all offline acceptance/regression tests with:
 
 ```bash
+python -m pip install -e ".[test]"
 python -m unittest discover -s tests -v
 ```

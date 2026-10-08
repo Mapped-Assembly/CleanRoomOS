@@ -109,6 +109,7 @@ these new context/completeness fields cannot be newly approved; re-import result
 and prepare a new package. Existing accepted decisions stay in the ledger.
 
 ```bash
+python -m pip install -e ".[test]"
 python -m unittest discover -s tests -v
 ```
 
