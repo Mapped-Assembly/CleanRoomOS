@@ -1,12 +1,16 @@
 """FastAPI service exposing the persistent CleanRoomOS runtime."""
 from __future__ import annotations
 
+import hmac
 import os
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, HTTPException, Query, status
+from fastapi import FastAPI, Header, HTTPException, Query, Request, status
+from fastapi.responses import JSONResponse
 
+from cleanroom_os.action_api import mount_action_routes
+from cleanroom_os.action_runtime import ActionExecutor, ActionRuntime, SimulatedExecutor, UnknownActionError
 from cleanroom_os.domain import (
     CleanroomInstanceCreate,
     CleanroomInstanceRead,
@@ -16,8 +20,10 @@ from cleanroom_os.domain import (
 )
 from cleanroom_os.persistence import (
     Database,
+    AuditedActionRequiredError,
     DuplicateIdentifierError,
     RuntimeRepository,
+    PersistenceError,
     UnknownInstanceError,
 )
 
@@ -29,10 +35,25 @@ def database_url_from_environment() -> str:
     return os.getenv("CLEANROOM_DATABASE_URL", DEFAULT_DATABASE_URL)
 
 
-def create_app(database_url: str | None = None) -> FastAPI:
+def create_app(database_url: str | None = None, *, operator_token: str | None = None,
+               executor: ActionExecutor | None = None) -> FastAPI:
     """Create a persistent CleanRoomOS API bound to one database backend."""
     database = Database(database_url or database_url_from_environment())
     repository = RuntimeRepository(database)
+    operator_token = operator_token if operator_token is not None else os.getenv("CLEANROOM_OPERATOR_TOKEN", "")
+    adapter_mode = os.getenv("CLEANROOM_ACTION_EXECUTOR", "disabled")
+    if adapter_mode not in {"disabled", "simulation"}:
+        raise ValueError("CLEANROOM_ACTION_EXECUTOR must be disabled or simulation")
+    if executor is None and adapter_mode == "simulation":
+        executor = SimulatedExecutor()
+    actions = ActionRuntime(database, executor)
+
+    def require_operator(authorization: str | None = Header(default=None)) -> None:
+        if not operator_token:
+            raise HTTPException(status_code=503, detail="Operator access is not configured")
+        supplied = authorization[7:] if authorization and authorization.startswith("Bearer ") else ""
+        if not hmac.compare_digest(supplied.encode(), operator_token.encode()):
+            raise HTTPException(status_code=401, detail="Operator credential required", headers={"WWW-Authenticate": "Bearer"})
 
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
@@ -51,6 +72,19 @@ def create_app(database_url: str | None = None) -> FastAPI:
     )
     api.state.database = database
     api.state.repository = repository
+    api.state.actions = actions
+
+    async def missing_resource(request: Request, exc: PersistenceError) -> JSONResponse:
+        return JSONResponse(status_code=404, content={"detail": str(exc)})
+
+    async def conflicting_resource(request: Request, exc: PersistenceError) -> JSONResponse:
+        return JSONResponse(status_code=409, content={"detail": str(exc)})
+
+    api.add_exception_handler(UnknownInstanceError, missing_resource)
+    api.add_exception_handler(UnknownActionError, missing_resource)
+    api.add_exception_handler(DuplicateIdentifierError, conflicting_resource)
+    api.add_exception_handler(AuditedActionRequiredError, conflicting_resource)
+    mount_action_routes(api, actions, require_operator)
 
     @api.get("/healthz")
     def health() -> dict[str, str]:
@@ -91,8 +125,11 @@ def create_app(database_url: str | None = None) -> FastAPI:
     def create_record(
         instance_id: str,
         payload: OperationalRecordCreate,
+        authorization: str | None = Header(default=None),
     ) -> OperationalRecordRead:
         """Create one typed operational record inside an instance."""
+        if payload.kind in {"maintenance", "calibration", "contamination", "sop_reference"}:
+            require_operator(authorization)
         try:
             return repository.create_record(instance_id, payload)
         except UnknownInstanceError as exc:

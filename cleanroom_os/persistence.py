@@ -84,6 +84,10 @@ class DuplicateIdentifierError(PersistenceError):
     """Raised when a stable identifier is already in use."""
 
 
+class AuditedActionRequiredError(PersistenceError):
+    """Action lifecycle records may only be written through the audited service."""
+
+
 class Database:
     """Own the SQLAlchemy engine/session factory for one runtime database."""
 
@@ -128,6 +132,8 @@ class Database:
 
     def initialize(self) -> None:
         """Deterministically create the current runtime schema if it is absent."""
+        from cleanroom_os import action_runtime  # noqa: F401 - register audit tables
+
         Base.metadata.create_all(self.engine)
 
     @contextmanager
@@ -149,6 +155,21 @@ class Database:
         """Verify that the configured persistence backend is reachable."""
         with self.engine.connect() as connection:
             connection.execute(text("SELECT 1"))
+
+    @contextmanager
+    def instance_session(self, instance_id: str) -> Iterator[Session]:
+        """Serialize short state/decision writes within an instance across workers."""
+        with self.session() as session:
+            if self.engine.dialect.name == "sqlite":
+                session.execute(text("BEGIN IMMEDIATE"))
+            instance = session.scalar(
+                select(CleanroomInstanceRow)
+                .where(CleanroomInstanceRow.id == instance_id)
+                .with_for_update()
+            )
+            if instance is None:
+                raise UnknownInstanceError(f"Unknown cleanroom instance: {instance_id}")
+            yield session
 
     def dispose(self) -> None:
         """Release pooled database resources."""
@@ -203,6 +224,8 @@ class RuntimeRepository:
         data: OperationalRecordCreate,
     ) -> OperationalRecordRead:
         """Persist one typed operational record inside an existing instance."""
+        if data.kind in {"action", "risk_decision", "incident", "operator_intervention"}:
+            raise AuditedActionRequiredError("Use the audited /actions endpoints for action lifecycle records")
         row = OperationalRecordRow(
             id=data.id or uuid4().hex,
             instance_id=instance_id,
@@ -210,9 +233,7 @@ class RuntimeRepository:
             payload=data.payload.model_dump(mode="json"),
         )
         try:
-            with self.database.session() as session:
-                if session.get(CleanroomInstanceRow, instance_id) is None:
-                    raise UnknownInstanceError(f"Unknown cleanroom instance: {instance_id}")
+            with self.database.instance_session(instance_id) as session:
                 session.add(row)
                 session.flush()
         except IntegrityError as exc:

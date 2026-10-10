@@ -101,6 +101,8 @@ subagent calls cannot change the SQLite workflow.
 
 ## Evidence and checks
 
+- [Persistent runtime](docs/persistent-runtime.md): instance-scoped service and storage
+- [Audited actions](docs/action-audit.md): policy gates, equipment evidence, incidents, and operator interventions
 - [Shared workflow SOP](docs/cleanroom-sop.md): authority and human decisions
 - [Typed contracts](docs/contracts.md): JSON boundaries and source identity
 - [Synthetic facility](fixtures/mock-facility/README.md): rooms, constraints and source evidence
